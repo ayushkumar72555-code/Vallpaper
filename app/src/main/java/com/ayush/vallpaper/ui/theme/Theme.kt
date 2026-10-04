@@ -15,6 +15,8 @@ import androidx.core.view.WindowCompat
 private val VallpaperDarkColors = darkColorScheme(
     primary = VallpaperDarkPrimary,
     onPrimary = VallpaperDarkOnPrimary,
+    primaryContainer = VallpaperDarkPrimaryContainer,
+    onPrimaryContainer = VallpaperDarkOnPrimaryContainer,
     secondary = VallpaperDarkSecondary,
     onSecondary = VallpaperDarkOnSecondary,
     background = VallpaperDarkBackground,
@@ -28,6 +30,8 @@ private val VallpaperDarkColors = darkColorScheme(
 private val VallpaperLightColors = lightColorScheme(
     primary = VallpaperLightPrimary,
     onPrimary = VallpaperLightOnPrimary,
+    primaryContainer = VallpaperLightPrimaryContainer,
+    onPrimaryContainer = VallpaperLightOnPrimaryContainer,
     secondary = VallpaperLightSecondary,
     onSecondary = VallpaperLightOnSecondary,
     background = VallpaperLightBackground,
@@ -55,13 +59,12 @@ fun VallpaperTheme(
         SideEffect {
             val window = (view.context as Activity).window
 
+            WindowCompat.setDecorFitsSystemWindows(window, true)
+
             window.statusBarColor = colorScheme.background.toArgb()
             window.navigationBarColor = colorScheme.background.toArgb()
 
-            WindowCompat.getInsetsController(
-                window,
-                view
-            ).apply {
+            WindowCompat.getInsetsController(window, view).apply {
                 isAppearanceLightStatusBars = !darkTheme
                 isAppearanceLightNavigationBars = !darkTheme
             }
