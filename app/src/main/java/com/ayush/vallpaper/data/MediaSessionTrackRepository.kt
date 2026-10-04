@@ -179,11 +179,7 @@ class MediaSessionTrackRepository(
             MediaMetadata.METADATA_KEY_ALBUM
         ).orEmpty()
 
-        val artworkUri =
-            metadata.description
-                ?.iconUri
-                ?.toString()
-                .orEmpty()
+        val artworkUri = findArtworkUri(metadata)
 
         return Track(
             id = "${controller.packageName}:$title:$artist",
@@ -192,5 +188,27 @@ class MediaSessionTrackRepository(
             album = album.ifBlank { "Unknown album" },
             artworkUrl = artworkUri
         )
+    }
+
+    private fun findArtworkUri(
+        metadata: MediaMetadata
+    ): String {
+        val artworkKeys = listOf(
+            MediaMetadata.METADATA_KEY_ART_URI,
+            MediaMetadata.METADATA_KEY_ALBUM_ART_URI,
+            MediaMetadata.METADATA_KEY_DISPLAY_ICON_URI
+        )
+
+        for (key in artworkKeys) {
+            val uri = metadata.getString(key)
+            if (!uri.isNullOrBlank()) {
+                return uri
+            }
+        }
+
+        return metadata.description
+            ?.iconUri
+            ?.toString()
+            .orEmpty()
     }
 }
