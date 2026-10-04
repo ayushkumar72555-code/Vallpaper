@@ -1,7 +1,6 @@
 package com.ayush.vallpaper
 
 import android.app.Application
-import android.app.WallpaperManager
 import android.graphics.Bitmap
 import android.util.Log
 import com.ayush.vallpaper.data.AppSettingsRepository
@@ -11,6 +10,7 @@ import com.ayush.vallpaper.domain.model.Track
 import com.ayush.vallpaper.ui.screens.WallpaperTarget
 import com.ayush.vallpaper.wallpaper.ArtworkLoader
 import com.ayush.vallpaper.wallpaper.WallpaperApplier
+import com.ayush.vallpaper.wallpaper.WallpaperDimensions
 import com.ayush.vallpaper.wallpaper.WallpaperGenerator
 import com.ayush.vallpaper.wallpaper.WallpaperRenderer
 import kotlinx.coroutines.CancellationException
@@ -32,7 +32,6 @@ class VallpaperApplication : Application() {
 
     companion object {
         private const val TAG = "VallpaperAuto"
-        private const val MAX_WALLPAPER_PIXELS = 20_000_000L
     }
 
     val trackRepository by lazy { MediaSessionTrackRepository(applicationContext) }
@@ -113,11 +112,7 @@ class VallpaperApplication : Application() {
         try {
             _automaticWallpaperStatus.value = AutomaticWallpaperStatus.GENERATING
 
-            // IMPORTANT: automatic wallpapers must use the actual physical
-            // display aspect ratio. WallpaperManager.desiredMinimumHeight can
-            // be larger than the screen on launchers that support scrolling,
-            // which causes the launcher to crop the generated composition.
-            val (width, height) = getPhysicalDisplayDimensions()
+            val (width, height) = WallpaperDimensions.get(applicationContext)
             Log.d(TAG, "Generating ${width}x${height} wallpaper for ${track.title}")
 
             bitmap = wallpaperGenerator.generate(
@@ -134,7 +129,11 @@ class VallpaperApplication : Application() {
 
             if (settings.applyToHomeScreen) {
                 currentCoroutineContext().ensureActive()
-                val result = WallpaperApplier.apply(applicationContext, bitmap, WallpaperTarget.HOME)
+                val result = WallpaperApplier.apply(
+                    applicationContext,
+                    bitmap,
+                    WallpaperTarget.HOME
+                )
                 if (result.isFailure) {
                     allTargetsSucceeded = false
                     Log.e(TAG, "Automatic home wallpaper update failed", result.exceptionOrNull())
@@ -143,7 +142,11 @@ class VallpaperApplication : Application() {
 
             if (settings.applyToLockScreen) {
                 currentCoroutineContext().ensureActive()
-                val result = WallpaperApplier.apply(applicationContext, bitmap, WallpaperTarget.LOCK)
+                val result = WallpaperApplier.apply(
+                    applicationContext,
+                    bitmap,
+                    WallpaperTarget.LOCK
+                )
                 if (result.isFailure) {
                     allTargetsSucceeded = false
                     Log.e(TAG, "Automatic lock wallpaper update failed", result.exceptionOrNull())
@@ -166,21 +169,6 @@ class VallpaperApplication : Application() {
         } finally {
             if (bitmap != null && !bitmap.isRecycled) bitmap.recycle()
         }
-    }
-
-    private fun getPhysicalDisplayDimensions(): Pair<Int, Int> {
-        val metrics = resources.displayMetrics
-        var width = metrics.widthPixels.coerceAtLeast(1)
-        var height = metrics.heightPixels.coerceAtLeast(1)
-
-        val pixels = width.toLong() * height.toLong()
-        if (pixels > MAX_WALLPAPER_PIXELS) {
-            val scale = kotlin.math.sqrt(MAX_WALLPAPER_PIXELS.toDouble() / pixels.toDouble())
-            width = (width * scale).toInt().coerceAtLeast(1)
-            height = (height * scale).toInt().coerceAtLeast(1)
-        }
-
-        return width to height
     }
 
     override fun onTerminate() {
