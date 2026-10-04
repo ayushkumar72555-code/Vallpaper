@@ -27,18 +27,6 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
-import kotlin.math.sqrt
-
-enum class AutomaticWallpaperStatus {
-    IDLE,
-    WAITING_FOR_MUSIC,
-    WAITING_FOR_ARTWORK,
-    GENERATING,
-    APPLYING,
-    APPLIED,
-    NO_TARGET,
-    ERROR
-}
 
 class VallpaperApplication : Application() {
 
@@ -47,13 +35,8 @@ class VallpaperApplication : Application() {
         private const val MAX_WALLPAPER_PIXELS = 20_000_000L
     }
 
-    val trackRepository by lazy {
-        MediaSessionTrackRepository(applicationContext)
-    }
-
-    val settingsRepository by lazy {
-        AppSettingsRepository(applicationContext)
-    }
+    val trackRepository by lazy { MediaSessionTrackRepository(applicationContext) }
+    val settingsRepository by lazy { AppSettingsRepository(applicationContext) }
 
     private val wallpaperGenerator by lazy {
         WallpaperGenerator(
@@ -62,14 +45,10 @@ class VallpaperApplication : Application() {
         )
     }
 
-    private val applicationScope =
-        CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
-    private val _automaticWallpaperStatus =
-        MutableStateFlow(AutomaticWallpaperStatus.IDLE)
-
-    val automaticWallpaperStatus: StateFlow<AutomaticWallpaperStatus> =
-        _automaticWallpaperStatus.asStateFlow()
+    private val _automaticWallpaperStatus = MutableStateFlow(AutomaticWallpaperStatus.IDLE)
+    val automaticWallpaperStatus: StateFlow<AutomaticWallpaperStatus> = _automaticWallpaperStatus.asStateFlow()
 
     @Volatile
     private var lastSuccessfulRequestKey: String? = null
@@ -93,18 +72,11 @@ class VallpaperApplication : Application() {
                     currentCoroutineContext().ensureActive()
 
                     if (!request.settings.automaticWallpaper) {
-                        _automaticWallpaperStatus.value =
-                            if (request.track == null) {
-                                AutomaticWallpaperStatus.WAITING_FOR_MUSIC
-                            } else {
-                                AutomaticWallpaperStatus.IDLE
-                            }
+                        _automaticWallpaperStatus.value = AutomaticWallpaperStatus.IDLE
                         return@collectLatest
                     }
 
-                    if (!request.settings.applyToHomeScreen &&
-                        !request.settings.applyToLockScreen
-                    ) {
+                    if (!request.settings.applyToHomeScreen && !request.settings.applyToLockScreen) {
                         _automaticWallpaperStatus.value = AutomaticWallpaperStatus.NO_TARGET
                         return@collectLatest
                     }
@@ -125,11 +97,7 @@ class VallpaperApplication : Application() {
                         return@collectLatest
                     }
 
-                    updateWallpaperAutomatically(
-                        track = track,
-                        settings = request.settings,
-                        requestKey = request.key
-                    )
+                    updateWallpaperAutomatically(track, request.settings, request.key)
                 }
         }
     }
@@ -145,7 +113,11 @@ class VallpaperApplication : Application() {
         try {
             _automaticWallpaperStatus.value = AutomaticWallpaperStatus.GENERATING
 
-            val (width, height) = getWallpaperDimensions()
+            // IMPORTANT: automatic wallpapers must use the actual physical
+            // display aspect ratio. WallpaperManager.desiredMinimumHeight can
+            // be larger than the screen on launchers that support scrolling,
+            // which causes the launcher to crop the generated composition.
+            val (width, height) = getPhysicalDisplayDimensions()
             Log.d(TAG, "Generating ${width}x${height} wallpaper for ${track.title}")
 
             bitmap = wallpaperGenerator.generate(
@@ -162,11 +134,7 @@ class VallpaperApplication : Application() {
 
             if (settings.applyToHomeScreen) {
                 currentCoroutineContext().ensureActive()
-                val result = WallpaperApplier.apply(
-                    context = applicationContext,
-                    bitmap = bitmap,
-                    target = WallpaperTarget.HOME
-                )
+                val result = WallpaperApplier.apply(applicationContext, bitmap, WallpaperTarget.HOME)
                 if (result.isFailure) {
                     allTargetsSucceeded = false
                     Log.e(TAG, "Automatic home wallpaper update failed", result.exceptionOrNull())
@@ -175,11 +143,7 @@ class VallpaperApplication : Application() {
 
             if (settings.applyToLockScreen) {
                 currentCoroutineContext().ensureActive()
-                val result = WallpaperApplier.apply(
-                    context = applicationContext,
-                    bitmap = bitmap,
-                    target = WallpaperTarget.LOCK
-                )
+                val result = WallpaperApplier.apply(applicationContext, bitmap, WallpaperTarget.LOCK)
                 if (result.isFailure) {
                     allTargetsSucceeded = false
                     Log.e(TAG, "Automatic lock wallpaper update failed", result.exceptionOrNull())
@@ -200,30 +164,18 @@ class VallpaperApplication : Application() {
             _automaticWallpaperStatus.value = AutomaticWallpaperStatus.ERROR
             Log.e(TAG, "Automatic wallpaper update failed", exception)
         } finally {
-            if (bitmap != null && !bitmap.isRecycled) {
-                bitmap.recycle()
-            }
+            if (bitmap != null && !bitmap.isRecycled) bitmap.recycle()
         }
     }
 
-    private fun getWallpaperDimensions(): Pair<Int, Int> {
-        val manager = WallpaperManager.getInstance(applicationContext)
-        val displayMetrics = resources.displayMetrics
-
-        var width = manager.desiredMinimumWidth
-        var height = manager.desiredMinimumHeight
-
-        if (width <= 0 || height <= 0) {
-            width = displayMetrics.widthPixels
-            height = displayMetrics.heightPixels
-        }
-
-        width = width.coerceAtLeast(1)
-        height = height.coerceAtLeast(1)
+    private fun getPhysicalDisplayDimensions(): Pair<Int, Int> {
+        val metrics = resources.displayMetrics
+        var width = metrics.widthPixels.coerceAtLeast(1)
+        var height = metrics.heightPixels.coerceAtLeast(1)
 
         val pixels = width.toLong() * height.toLong()
         if (pixels > MAX_WALLPAPER_PIXELS) {
-            val scale = sqrt(MAX_WALLPAPER_PIXELS.toDouble() / pixels.toDouble())
+            val scale = kotlin.math.sqrt(MAX_WALLPAPER_PIXELS.toDouble() / pixels.toDouble())
             width = (width * scale).toInt().coerceAtLeast(1)
             height = (height * scale).toInt().coerceAtLeast(1)
         }
@@ -253,4 +205,15 @@ class VallpaperApplication : Application() {
                 settings.automaticWallpaper.toString()
             ).joinToString("|")
     }
+}
+
+enum class AutomaticWallpaperStatus {
+    IDLE,
+    WAITING_FOR_MUSIC,
+    WAITING_FOR_ARTWORK,
+    GENERATING,
+    APPLYING,
+    APPLIED,
+    NO_TARGET,
+    ERROR
 }
