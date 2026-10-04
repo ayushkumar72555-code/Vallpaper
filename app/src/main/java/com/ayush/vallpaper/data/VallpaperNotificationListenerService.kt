@@ -20,7 +20,7 @@ class VallpaperNotificationListenerService :
     override fun onListenerDisconnected() {
         // Android documents requestRebind() as the supported recovery path
         // when a NotificationListenerService becomes disconnected.
-        requestRebind(
+        NotificationListenerService.requestRebind(
             ComponentName(
                 this,
                 VallpaperNotificationListenerService::class.java
