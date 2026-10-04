@@ -5,7 +5,6 @@ import android.content.Context
 import android.media.MediaMetadata
 import android.media.session.MediaController
 import android.media.session.MediaSessionManager
-import android.os.Build
 import com.ayush.vallpaper.domain.model.Track
 import com.ayush.vallpaper.domain.repository.TrackRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -40,6 +39,8 @@ class MediaSessionTrackRepository(
     private val controllerCallbacks =
         mutableMapOf<MediaController, MediaController.Callback>()
 
+    private var isListening = false
+
     private val activeSessionsListener =
         MediaSessionManager.OnActiveSessionsChangedListener { controllers ->
             updateControllers(controllers)
@@ -64,21 +65,33 @@ class MediaSessionTrackRepository(
     }
 
     fun start() {
+        if (isListening) {
+            refresh()
+            return
+        }
+
         try {
             mediaSessionManager?.addOnActiveSessionsChangedListener(
                 activeSessionsListener,
                 notificationListenerComponent
             )
+
+            isListening = true
             refresh()
         } catch (_: SecurityException) {
+            isListening = false
             _currentTrack.value = null
         }
     }
 
     fun stop() {
-        mediaSessionManager?.removeOnActiveSessionsChangedListener(
-            activeSessionsListener
-        )
+        if (isListening) {
+            mediaSessionManager?.removeOnActiveSessionsChangedListener(
+                activeSessionsListener
+            )
+        }
+
+        isListening = false
 
         controllerCallbacks.keys.toList().forEach { controller ->
             controllerCallbacks[controller]?.let { callback ->
@@ -168,21 +181,18 @@ class MediaSessionTrackRepository(
         ).orEmpty()
 
         val artworkUri =
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                controller.metadata
-                    ?.description
-                    ?.iconUri
-                    ?.toString()
-            } else {
-                null
-            }
+            controller.metadata
+                ?.description
+                ?.iconUri
+                ?.toString()
+                .orEmpty()
 
         return Track(
             id = "${controller.packageName}:$title:$artist",
             title = title,
             artist = artist.ifBlank { "Unknown artist" },
             album = album.ifBlank { "Unknown album" },
-            artworkUrl = artworkUri.orEmpty()
+            artworkUrl = artworkUri
         )
     }
 }
