@@ -15,24 +15,14 @@ class WallpaperGenerator(
         width: Int,
         height: Int
     ): Bitmap {
+        val artwork = artworkLoader.load(track.artworkUrl)
 
-        val artwork =
-            artworkLoader.load(
-                track.artworkUrl
-            )
-
-        val wallpaper =
-            renderer.render(
-                track = track,
-                artwork = artwork,
-                style = style,
-                width = width,
-                height = height
-            )
-
-        return LockscreenSafeZoneRenderer.apply(
-            bitmap = wallpaper,
-            style = style
+        return renderer.render(
+            track = track,
+            artwork = artwork,
+            style = style,
+            width = width,
+            height = height
         )
     }
 }
