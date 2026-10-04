@@ -44,10 +44,4 @@ class MockTrackRepository : TrackRepository {
 
     override val currentTrack: StateFlow<Track?> =
         _currentTrack.asStateFlow()
-
-    private val _history =
-        MutableStateFlow(tracks)
-
-    override val history: StateFlow<List<Track>> =
-        _history.asStateFlow()
 }
