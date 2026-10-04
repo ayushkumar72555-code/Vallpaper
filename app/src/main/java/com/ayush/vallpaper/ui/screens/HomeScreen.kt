@@ -2,6 +2,7 @@ package com.ayush.vallpaper.ui.screens
 
 import android.content.Intent
 import android.provider.Settings
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -55,6 +56,7 @@ import com.ayush.vallpaper.ui.components.AlbumArtwork
 import com.ayush.vallpaper.viewmodel.AppViewModelFactory
 import com.ayush.vallpaper.viewmodel.HomeUiState
 import com.ayush.vallpaper.viewmodel.HomeViewModel
+import com.ayush.vallpaper.wallpaper.WallpaperApplier
 
 private val RetroOrange = Color(0xFFFF7A00)
 private val RetroOrangeDark = Color(0xFFFF8A00)
@@ -77,7 +79,29 @@ fun HomeScreen() {
     if (showFullPreview && state.generatedWallpaper != null) {
         WallpaperPreviewScreen(
             bitmap = state.generatedWallpaper!!,
-            onBack = { showFullPreview = false }
+            onBack = { showFullPreview = false },
+            onTargetSelected = { target ->
+                val result = WallpaperApplier.apply(
+                    context = context,
+                    bitmap = state.generatedWallpaper!!,
+                    target = target
+                )
+
+                result.onSuccess {
+                    Toast.makeText(
+                        context,
+                        "Wallpaper applied",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    showFullPreview = false
+                }.onFailure { error ->
+                    Toast.makeText(
+                        context,
+                        "Could not apply wallpaper: ${error.message ?: "unknown error"}",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
         )
         return
     }
