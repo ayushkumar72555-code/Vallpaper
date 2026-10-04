@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 data class HomeUiState(
     val track: Track? = null,
@@ -40,12 +41,16 @@ class HomeViewModel(
             )
 
     fun selectStyle(style: WallpaperStyle) {
-        settingsRepository.setSelectedStyle(style)
+        viewModelScope.launch {
+            settingsRepository.setSelectedStyle(style)
+        }
     }
 
     fun toggleAutomaticWallpaper() {
-        settingsRepository.setAutomaticWallpaper(
-            !uiState.value.automaticWallpaper
-        )
+        viewModelScope.launch {
+            settingsRepository.setAutomaticWallpaper(
+                !uiState.value.automaticWallpaper
+            )
+        }
     }
 }
