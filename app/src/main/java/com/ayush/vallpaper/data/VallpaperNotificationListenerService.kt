@@ -1,5 +1,6 @@
 package com.ayush.vallpaper.data
 
+import android.content.ComponentName
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import com.ayush.vallpaper.VallpaperApplication
@@ -17,7 +18,14 @@ class VallpaperNotificationListenerService :
     }
 
     override fun onListenerDisconnected() {
-        vallpaperApplication.trackRepository.refresh()
+        // Android documents requestRebind() as the supported recovery path
+        // when a NotificationListenerService becomes disconnected.
+        requestRebind(
+            ComponentName(
+                this,
+                VallpaperNotificationListenerService::class.java
+            )
+        )
         super.onListenerDisconnected()
     }
 
