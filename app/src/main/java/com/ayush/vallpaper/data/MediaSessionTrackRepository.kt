@@ -7,6 +7,7 @@ import android.media.MediaMetadata
 import android.media.session.MediaController
 import android.media.session.MediaSessionManager
 import android.net.Uri
+import android.util.Log
 import com.ayush.vallpaper.domain.model.Track
 import com.ayush.vallpaper.domain.repository.TrackRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,6 +19,10 @@ import java.io.FileOutputStream
 class MediaSessionTrackRepository(
     private val context: Context
 ) : TrackRepository {
+
+    companion object {
+        private const val TAG = "VallpaperMedia"
+    }
 
     private val mediaSessionManager =
         context.getSystemService(MediaSessionManager::class.java)
@@ -185,6 +190,11 @@ class MediaSessionTrackRepository(
 
         val artworkUrl = resolveArtwork(metadata)
 
+        Log.d(
+            TAG,
+            "Artwork for ${controller.packageName}: $artworkUrl"
+        )
+
         return Track(
             id = "${controller.packageName}:$title:$artist",
             title = title,
@@ -207,21 +217,38 @@ class MediaSessionTrackRepository(
             val uriString = metadata.getString(key)
 
             if (!uriString.isNullOrBlank()) {
-                val normalizedUri =
-                    copyUriToCacheIfNeeded(Uri.parse(uriString))
+                val uri = Uri.parse(uriString)
+                val normalizedUri = copyUriToCacheIfNeeded(uri)
 
                 if (normalizedUri.isNotBlank()) {
                     return normalizedUri
                 }
+
+                Log.d(
+                    TAG,
+                    "Could not read artwork URI: $uri"
+                )
             }
         }
 
         metadata.description?.iconUri?.let { uri ->
-            val normalizedUri =
-                copyUriToCacheIfNeeded(uri)
+            val normalizedUri = copyUriToCacheIfNeeded(uri)
 
             if (normalizedUri.isNotBlank()) {
                 return normalizedUri
+            }
+
+            Log.d(
+                TAG,
+                "Could not read description icon URI: $uri"
+            )
+        }
+
+        metadata.description?.iconBitmap?.let { bitmap ->
+            val cached = saveArtwork(bitmap, metadata)
+
+            if (cached.isNotBlank()) {
+                return cached
             }
         }
 
@@ -230,6 +257,11 @@ class MediaSessionTrackRepository(
         if (bitmap != null) {
             return saveArtwork(bitmap, metadata)
         }
+
+        Log.d(
+            TAG,
+            "No readable artwork found in MediaMetadata"
+        )
 
         return ""
     }
@@ -268,18 +300,19 @@ class MediaSessionTrackRepository(
                     }
                 }
 
-                "content" -> {
-                    copyContentUriToCache(uri)
-                }
-
-                else -> ""
+                else -> copyProviderUriToCache(uri)
             }
-        } catch (_: Exception) {
+        } catch (exception: Exception) {
+            Log.d(
+                TAG,
+                "Artwork URI read failed: $uri",
+                exception
+            )
             ""
         }
     }
 
-    private fun copyContentUriToCache(
+    private fun copyProviderUriToCache(
         uri: Uri
     ): String {
         val artworkDirectory =
@@ -310,7 +343,12 @@ class MediaSessionTrackRepository(
             }
 
             Uri.fromFile(file).toString()
-        } catch (_: Exception) {
+        } catch (exception: Exception) {
+            Log.d(
+                TAG,
+                "Content provider artwork could not be copied: $uri",
+                exception
+            )
             file.delete()
             ""
         }
@@ -356,7 +394,12 @@ class MediaSessionTrackRepository(
             }
 
             Uri.fromFile(file).toString()
-        } catch (_: Exception) {
+        } catch (exception: Exception) {
+            Log.d(
+                TAG,
+                "Bitmap artwork could not be saved",
+                exception
+            )
             ""
         }
     }
