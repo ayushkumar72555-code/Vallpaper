@@ -7,6 +7,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,6 +27,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.BorderStroke
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -36,6 +38,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -74,7 +77,11 @@ fun HomeScreen() {
     val metrics = context.resources.displayMetrics
     val wallpaperWidth = metrics.widthPixels.coerceAtLeast(1)
     val wallpaperHeight = metrics.heightPixels.coerceAtLeast(1)
-    val accent = if (androidx.compose.foundation.isSystemInDarkTheme()) RetroOrangeDark else RetroOrange
+    val accent = if (isSystemInDarkTheme()) RetroOrangeDark else RetroOrange
+
+    LaunchedEffect(wallpaperWidth, wallpaperHeight) {
+        viewModel.updatePreviewSize(wallpaperWidth, wallpaperHeight)
+    }
 
     if (showFullPreview && state.generatedWallpaper != null) {
         WallpaperPreviewScreen(
@@ -169,7 +176,7 @@ fun HomeScreen() {
                     style = style,
                     selected = state.selectedStyle == style,
                     accent = accent,
-                    onClick = { viewModel.selectStyleAndGenerate(style, wallpaperWidth, wallpaperHeight) }
+                    onClick = { viewModel.selectStyle(style) }
                 )
             }
         }
@@ -208,7 +215,7 @@ fun HomeScreen() {
             else -> {
                 RetroPanel(accent, Modifier.fillMaxWidth().aspectRatio(9f / 16f)) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("SELECT A STYLE", color = accent, style = MaterialTheme.typography.labelLarge)
+                        Text("WAITING FOR MUSIC", color = accent, style = MaterialTheme.typography.labelLarge)
                     }
                 }
             }
@@ -243,7 +250,9 @@ fun HomeScreen() {
             state = state,
             accent = accent,
             onDismiss = { showSettings = false },
-            onAutomaticWallpaperChanged = { viewModel.toggleAutomaticWallpaper() }
+            onAutomaticWallpaperChanged = { viewModel.toggleAutomaticWallpaper() },
+            onHomeScreenChanged = { viewModel.setApplyToHomeScreen(it) },
+            onLockScreenChanged = { viewModel.setApplyToLockScreen(it) }
         )
     }
 }
@@ -289,23 +298,73 @@ private fun RetroStyleCard(style: WallpaperStyle, selected: Boolean, accent: Col
 }
 
 @Composable
-private fun SettingsOverlay(state: HomeUiState, accent: Color, onDismiss: () -> Unit, onAutomaticWallpaperChanged: () -> Unit) {
+private fun SettingsOverlay(
+    state: HomeUiState,
+    accent: Color,
+    onDismiss: () -> Unit,
+    onAutomaticWallpaperChanged: () -> Unit,
+    onHomeScreenChanged: (Boolean) -> Unit,
+    onLockScreenChanged: (Boolean) -> Unit
+) {
     Dialog(onDismissRequest = onDismiss) {
         RetroPanel(accent) {
             Column(Modifier.padding(22.dp)) {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Text("SETTINGS", style = MaterialTheme.typography.headlineSmall)
                     Text("DONE", modifier = Modifier.clickable { onDismiss() }, color = accent)
                 }
+
                 Spacer(Modifier.height(24.dp))
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text("AUTO WALLPAPER", style = MaterialTheme.typography.titleMedium)
-                        Text("Automatically update when music changes.", style = MaterialTheme.typography.bodySmall)
-                    }
-                    Switch(checked = state.automaticWallpaper, onCheckedChange = { onAutomaticWallpaperChanged() })
-                }
+
+                SettingSwitchRow(
+                    title = "AUTO WALLPAPER",
+                    subtitle = "Automatically update when music changes.",
+                    checked = state.automaticWallpaper,
+                    onCheckedChange = { onAutomaticWallpaperChanged() }
+                )
+
+                Spacer(Modifier.height(14.dp))
+
+                SettingSwitchRow(
+                    title = "HOME SCREEN",
+                    subtitle = "Automatically apply generated wallpapers to Home.",
+                    checked = state.applyToHomeScreen,
+                    onCheckedChange = onHomeScreenChanged
+                )
+
+                Spacer(Modifier.height(14.dp))
+
+                SettingSwitchRow(
+                    title = "LOCK SCREEN",
+                    subtitle = "Automatically apply generated wallpapers to Lock screen.",
+                    checked = state.applyToLockScreen,
+                    onCheckedChange = onLockScreenChanged
+                )
             }
         }
+    }
+}
+
+@Composable
+private fun SettingSwitchRow(
+    title: String,
+    subtitle: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Row(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.titleMedium)
+            Text(subtitle, style = MaterialTheme.typography.bodySmall)
+        }
+        Switch(checked = checked, onCheckedChange = onCheckedChange)
     }
 }
