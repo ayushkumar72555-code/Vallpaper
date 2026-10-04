@@ -21,12 +21,17 @@ class WallpaperGenerator(
                 track.artworkUrl
             )
 
-        return renderer.render(
-            track = track,
-            artwork = artwork,
-            style = style,
-            width = width,
-            height = height
+        val wallpaper =
+            renderer.render(
+                track = track,
+                artwork = artwork,
+                style = style,
+                width = width,
+                height = height
+            )
+
+        return LockscreenSafeZoneRenderer.apply(
+            wallpaper
         )
     }
 }
