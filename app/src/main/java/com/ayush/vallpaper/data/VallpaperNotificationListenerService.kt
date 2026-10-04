@@ -1,33 +1,31 @@
 package com.ayush.vallpaper.data
 
 import android.service.notification.NotificationListenerService
+import android.service.notification.StatusBarNotification
+import com.ayush.vallpaper.VallpaperApplication
 
 class VallpaperNotificationListenerService :
     NotificationListenerService() {
 
-    private val application: VallpaperApplication
-        get() = getApplication() as VallpaperApplication
+    private val vallpaperApplication: VallpaperApplication
+        get() = application as VallpaperApplication
 
     override fun onListenerConnected() {
         super.onListenerConnected()
-        application.trackRepository.start()
-        application.trackRepository.refresh()
+        vallpaperApplication.trackRepository.start()
+        vallpaperApplication.trackRepository.refresh()
     }
 
     override fun onListenerDisconnected() {
-        application.trackRepository.refresh()
+        vallpaperApplication.trackRepository.refresh()
         super.onListenerDisconnected()
     }
 
-    override fun onNotificationPosted(
-        sbn: android.service.notification.StatusBarNotification?
-    ) {
-        application.trackRepository.refresh()
+    override fun onNotificationPosted(sbn: StatusBarNotification) {
+        vallpaperApplication.trackRepository.refresh()
     }
 
-    override fun onNotificationRemoved(
-        sbn: android.service.notification.StatusBarNotification?
-    ) {
-        application.trackRepository.refresh()
+    override fun onNotificationRemoved(sbn: StatusBarNotification) {
+        vallpaperApplication.trackRepository.refresh()
     }
 }
