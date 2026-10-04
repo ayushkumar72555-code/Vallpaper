@@ -1,6 +1,7 @@
 package com.ayush.vallpaper
 
 import android.app.Application
+import android.app.WallpaperManager
 import android.graphics.Bitmap
 import android.util.Log
 import com.ayush.vallpaper.data.AppSettingsRepository
@@ -42,6 +43,7 @@ class VallpaperApplication : Application() {
 
     companion object {
         private const val TAG = "VallpaperAuto"
+        private const val MAX_WALLPAPER_PIXELS = 20_000_000L
     }
 
     val trackRepository by lazy {
@@ -68,11 +70,6 @@ class VallpaperApplication : Application() {
     val automaticWallpaperStatus: StateFlow<AutomaticWallpaperStatus> =
         _automaticWallpaperStatus.asStateFlow()
 
-    /**
-     * Last request that completed successfully.
-     * This prevents repeated media-session/notification callbacks from
-     * regenerating and reapplying the exact same wallpaper.
-     */
     @Volatile
     private var lastSuccessfulRequestKey: String? = null
 
@@ -90,9 +87,7 @@ class VallpaperApplication : Application() {
             ) { track: Track?, settings: AppSettings ->
                 AutomaticWallpaperRequest(track, settings)
             }
-                .distinctUntilChanged { old, new ->
-                    old.key == new.key
-                }
+                .distinctUntilChanged { old, new -> old.key == new.key }
                 .collectLatest { request ->
                     currentCoroutineContext().ensureActive()
 
@@ -109,36 +104,23 @@ class VallpaperApplication : Application() {
                     if (!request.settings.applyToHomeScreen &&
                         !request.settings.applyToLockScreen
                     ) {
-                        _automaticWallpaperStatus.value =
-                            AutomaticWallpaperStatus.NO_TARGET
-                        Log.d(
-                            TAG,
-                            "Automatic wallpaper enabled, but no target is enabled"
-                        )
+                        _automaticWallpaperStatus.value = AutomaticWallpaperStatus.NO_TARGET
                         return@collectLatest
                     }
 
                     val track = request.track
                     if (track == null) {
-                        _automaticWallpaperStatus.value =
-                            AutomaticWallpaperStatus.WAITING_FOR_MUSIC
+                        _automaticWallpaperStatus.value = AutomaticWallpaperStatus.WAITING_FOR_MUSIC
                         return@collectLatest
                     }
 
                     if (track.artworkUrl.isBlank()) {
-                        _automaticWallpaperStatus.value =
-                            AutomaticWallpaperStatus.WAITING_FOR_ARTWORK
-                        Log.d(
-                            TAG,
-                            "Skipping automatic wallpaper: no readable artwork for ${track.title}"
-                        )
+                        _automaticWallpaperStatus.value = AutomaticWallpaperStatus.WAITING_FOR_ARTWORK
                         return@collectLatest
                     }
 
                     if (request.key == lastSuccessfulRequestKey) {
-                        _automaticWallpaperStatus.value =
-                            AutomaticWallpaperStatus.APPLIED
-                        Log.d(TAG, "Skipping duplicate automatic wallpaper request")
+                        _automaticWallpaperStatus.value = AutomaticWallpaperStatus.APPLIED
                         return@collectLatest
                     }
 
@@ -161,17 +143,11 @@ class VallpaperApplication : Application() {
         var bitmap: Bitmap? = null
 
         try {
-            _automaticWallpaperStatus.value =
-                AutomaticWallpaperStatus.GENERATING
+            _automaticWallpaperStatus.value = AutomaticWallpaperStatus.GENERATING
 
-            Log.d(
-                TAG,
-                "Generating automatic wallpaper for: ${track.title}"
-            )
+            val (width, height) = getWallpaperDimensions()
 
-            val metrics = resources.displayMetrics
-            val width = metrics.widthPixels.coerceAtLeast(1)
-            val height = metrics.heightPixels.coerceAtLeast(1)
+            Log.d(TAG, "Generating wallpaper at ${width}x${height} for ${track.title}")
 
             bitmap = wallpaperGenerator.generate(
                 track = track,
@@ -181,101 +157,83 @@ class VallpaperApplication : Application() {
             )
 
             currentCoroutineContext().ensureActive()
-
-            _automaticWallpaperStatus.value =
-                AutomaticWallpaperStatus.APPLYING
+            _automaticWallpaperStatus.value = AutomaticWallpaperStatus.APPLYING
 
             var allTargetsSucceeded = true
 
             if (settings.applyToHomeScreen) {
                 currentCoroutineContext().ensureActive()
-
                 val result = WallpaperApplier.apply(
                     context = applicationContext,
                     bitmap = bitmap,
                     target = WallpaperTarget.HOME
                 )
-
                 if (result.isFailure) {
                     allTargetsSucceeded = false
-                    Log.e(
-                        TAG,
-                        "Automatic home wallpaper update failed",
-                        result.exceptionOrNull()
-                    )
+                    Log.e(TAG, "Automatic home wallpaper update failed", result.exceptionOrNull())
                 }
             }
 
             if (settings.applyToLockScreen) {
                 currentCoroutineContext().ensureActive()
-
                 val result = WallpaperApplier.apply(
                     context = applicationContext,
                     bitmap = bitmap,
                     target = WallpaperTarget.LOCK
                 )
-
                 if (result.isFailure) {
                     allTargetsSucceeded = false
-                    Log.e(
-                        TAG,
-                        "Automatic lock wallpaper update failed",
-                        result.exceptionOrNull()
-                    )
+                    Log.e(TAG, "Automatic lock wallpaper update failed", result.exceptionOrNull())
                 }
             }
 
-            currentCoroutineContext().ensureActive()
-
             if (allTargetsSucceeded) {
                 lastSuccessfulRequestKey = requestKey
-                _automaticWallpaperStatus.value =
-                    AutomaticWallpaperStatus.APPLIED
-                Log.d(TAG, "Automatic wallpaper update complete")
+                _automaticWallpaperStatus.value = AutomaticWallpaperStatus.APPLIED
             } else {
-                _automaticWallpaperStatus.value =
-                    AutomaticWallpaperStatus.ERROR
-                Log.e(TAG, "Automatic wallpaper update completed with target errors")
+                _automaticWallpaperStatus.value = AutomaticWallpaperStatus.ERROR
             }
         } catch (exception: CancellationException) {
-            Log.d(
-                TAG,
-                "Automatic wallpaper update cancelled for ${track.title}"
-            )
             throw exception
         } catch (exception: Exception) {
-            _automaticWallpaperStatus.value =
-                AutomaticWallpaperStatus.ERROR
-            Log.e(
-                TAG,
-                "Automatic wallpaper generation failed",
-                exception
-            )
+            _automaticWallpaperStatus.value = AutomaticWallpaperStatus.ERROR
+            Log.e(TAG, "Automatic wallpaper update failed", exception)
         } finally {
-            bitmap?.recycle()
+            if (bitmap != null && !bitmap.isRecycled) {
+                bitmap.recycle()
+            }
         }
     }
 
-    override fun onTerminate() {
-        trackRepository.stop()
-        applicationScope.cancel()
-        super.onTerminate()
+    private fun getWallpaperDimensions(): Pair<Int, Int> {
+        val manager = WallpaperManager.getInstance(applicationContext)
+        val displayMetrics = resources.displayMetrics
+
+        var width = manager.desiredMinimumWidth
+        var height = manager.desiredMinimumHeight
+
+        if (width <= 0 || height <= 0) {
+            width = displayMetrics.widthPixels
+            height = displayMetrics.heightPixels
+        }
+
+        width = width.coerceAtLeast(1)
+        height = height.coerceAtLeast(1)
+
+        val pixels = width.toLong() * height.toLong()
+        if (pixels > MAX_WALLPAPER_PIXELS) {
+            val scale = kotlin.math.sqrt(
+                MAX_WALLPAPER_PIXELS.toDouble() / pixels.toDouble()
+            )
+            width = (width * scale).toInt().coerceAtLeast(1)
+            height = (height * scale).toInt().coerceAtLeast(1)
+        }
+
+        return width to height
     }
 
-    private data class AutomaticWallpaperRequest(
-        val track: Track?,
-        val settings: AppSettings
-    ) {
-        val key: String
-            get() = listOf(
-                track?.id.orEmpty(),
-                track?.title.orEmpty(),
-                track?.artist.orEmpty(),
-                track?.artworkUrl.orEmpty(),
-                settings.selectedStyle.name,
-                settings.applyToHomeScreen.toString(),
-                settings.applyToLockScreen.toString(),
-                settings.automaticWallpaper.toString()
-            ).joinToString("|")
+    override fun onTerminate() {
+        applicationScope.cancel()
+        super.onTerminate()
     }
 }
