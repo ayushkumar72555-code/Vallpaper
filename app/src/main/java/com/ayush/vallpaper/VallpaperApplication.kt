@@ -27,6 +27,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
+import kotlin.math.sqrt
 
 enum class AutomaticWallpaperStatus {
     IDLE,
@@ -139,15 +140,13 @@ class VallpaperApplication : Application() {
         requestKey: String
     ) {
         currentCoroutineContext().ensureActive()
-
         var bitmap: Bitmap? = null
 
         try {
             _automaticWallpaperStatus.value = AutomaticWallpaperStatus.GENERATING
 
             val (width, height) = getWallpaperDimensions()
-
-            Log.d(TAG, "Generating wallpaper at ${width}x${height} for ${track.title}")
+            Log.d(TAG, "Generating ${width}x${height} wallpaper for ${track.title}")
 
             bitmap = wallpaperGenerator.generate(
                 track = track,
@@ -187,6 +186,8 @@ class VallpaperApplication : Application() {
                 }
             }
 
+            currentCoroutineContext().ensureActive()
+
             if (allTargetsSucceeded) {
                 lastSuccessfulRequestKey = requestKey
                 _automaticWallpaperStatus.value = AutomaticWallpaperStatus.APPLIED
@@ -222,9 +223,7 @@ class VallpaperApplication : Application() {
 
         val pixels = width.toLong() * height.toLong()
         if (pixels > MAX_WALLPAPER_PIXELS) {
-            val scale = kotlin.math.sqrt(
-                MAX_WALLPAPER_PIXELS.toDouble() / pixels.toDouble()
-            )
+            val scale = sqrt(MAX_WALLPAPER_PIXELS.toDouble() / pixels.toDouble())
             width = (width * scale).toInt().coerceAtLeast(1)
             height = (height * scale).toInt().coerceAtLeast(1)
         }
@@ -233,7 +232,25 @@ class VallpaperApplication : Application() {
     }
 
     override fun onTerminate() {
+        trackRepository.stop()
         applicationScope.cancel()
         super.onTerminate()
+    }
+
+    private data class AutomaticWallpaperRequest(
+        val track: Track?,
+        val settings: AppSettings
+    ) {
+        val key: String
+            get() = listOf(
+                track?.id.orEmpty(),
+                track?.title.orEmpty(),
+                track?.artist.orEmpty(),
+                track?.artworkUrl.orEmpty(),
+                settings.selectedStyle.name,
+                settings.applyToHomeScreen.toString(),
+                settings.applyToLockScreen.toString(),
+                settings.automaticWallpaper.toString()
+            ).joinToString("|")
     }
 }
