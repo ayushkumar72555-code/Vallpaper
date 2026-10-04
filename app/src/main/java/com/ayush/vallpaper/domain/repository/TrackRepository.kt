@@ -4,8 +4,5 @@ import com.ayush.vallpaper.domain.model.Track
 import kotlinx.coroutines.flow.StateFlow
 
 interface TrackRepository {
-
     val currentTrack: StateFlow<Track?>
-
-    val history: StateFlow<List<Track>>
 }
