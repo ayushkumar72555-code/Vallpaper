@@ -1,10 +1,11 @@
 package com.ayush.vallpaper.domain.repository
 
 import com.ayush.vallpaper.domain.model.Track
+import kotlinx.coroutines.flow.StateFlow
 
 interface TrackRepository {
 
-    fun getCurrentTrack(): Track
+    val currentTrack: StateFlow<Track?>
 
-    fun getHistory(): List<Track>
+    val history: StateFlow<List<Track>>
 }
