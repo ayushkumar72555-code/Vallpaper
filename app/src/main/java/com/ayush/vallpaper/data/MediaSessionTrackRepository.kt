@@ -38,12 +38,6 @@ class MediaSessionTrackRepository(
     override val currentTrack: StateFlow<Track?> =
         _currentTrack.asStateFlow()
 
-    private val _history =
-        MutableStateFlow<List<Track>>(emptyList())
-
-    override val history: StateFlow<List<Track>> =
-        _history.asStateFlow()
-
     private val controllerCallbacks =
         mutableMapOf<MediaController, MediaController.Callback>()
 
@@ -68,7 +62,6 @@ class MediaSessionTrackRepository(
             updateControllers(controllers)
         } catch (_: SecurityException) {
             _currentTrack.value = null
-            _history.value = emptyList()
         }
     }
 
@@ -158,16 +151,7 @@ class MediaSessionTrackRepository(
             playingController
                 ?: controllers.firstOrNull { it.metadata != null }
 
-        val track = controller?.let(::toTrack)
-
-        _currentTrack.value = track
-
-        if (track != null) {
-            val currentHistory = _history.value
-            _history.value =
-                listOf(track) +
-                    currentHistory.filter { it.id != track.id }
-        }
+        _currentTrack.value = controller?.let(::toTrack)
     }
 
     private fun toTrack(
