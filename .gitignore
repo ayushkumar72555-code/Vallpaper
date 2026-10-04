@@ -1,0 +1,36 @@
+# Android Studio
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Gradle
+.gradle/
+build/
+*/build/
+
+# Local configuration
+local.properties
+
+# Generated files
+captures/
+.externalNativeBuild/
+.cxx/
+
+# APKs
+*.apk
+*.aab
+
+# Keystore files
+*.jks
+*.keystore
+
+# Android Studio profiling
+*.hprof
+
+# Kotlin
+.kotlin/
+
+# OS files
+.DS_Store
+Thumbs.db
