@@ -1,7 +1,6 @@
 package com.ayush.vallpaper.ui.screens
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -38,10 +37,13 @@ import com.ayush.vallpaper.wallpaper.WallpaperRenderer
 fun PreviewScreen(
     onBack: () -> Unit
 ) {
-    val context = LocalContext.current
+
+    val context =
+        LocalContext.current
 
     val application =
-        context.applicationContext as VallpaperApplication
+        context.applicationContext
+                as VallpaperApplication
 
     val track by
     application.trackRepository.currentTrack
@@ -55,62 +57,106 @@ fun PreviewScreen(
 
     val generator =
         remember {
+
             WallpaperGenerator(
-                artworkLoader = ArtworkLoader(
-                    context = context
-                ),
-                renderer = WallpaperRenderer()
+                artworkLoader =
+                    ArtworkLoader(
+                        context = context
+                    ),
+                renderer =
+                    WallpaperRenderer()
             )
         }
 
     val viewModel: WallpaperViewModel =
         viewModel(
-            factory = WallpaperViewModelFactory(
-                generator = generator
-            )
+            factory =
+                WallpaperViewModelFactory(
+                    generator = generator
+                )
         )
 
     val previewState by
-    viewModel.previewState.collectAsState()
+    viewModel.previewState
+        .collectAsState()
 
-    val currentTrack = track
-    val currentSettings = settings
+    val currentTrack =
+        track
+
+    val currentSettings =
+        settings
+
+    /*
+     * ------------------------------------------------------------
+     * Device wallpaper dimensions
+     * ------------------------------------------------------------
+     *
+     * We use the current display dimensions instead of permanently
+     * generating a 1080 x 2400 bitmap.
+     */
+
+    val displayMetrics =
+        context.resources.displayMetrics
+
+    val wallpaperWidth =
+        displayMetrics.widthPixels
+            .coerceAtLeast(1)
+
+    val wallpaperHeight =
+        displayMetrics.heightPixels
+            .coerceAtLeast(1)
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(
-                rememberScrollState()
-            )
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .verticalScroll(
+                    rememberScrollState()
+                )
+                .padding(24.dp),
+        horizontalAlignment =
+            Alignment.CenterHorizontally
     ) {
 
         Text(
-            text = "Wallpaper Preview",
-            style = MaterialTheme.typography.headlineMedium
+            text =
+                "Wallpaper Preview",
+            style =
+                MaterialTheme
+                    .typography
+                    .headlineMedium
         )
 
         Spacer(
-            modifier = Modifier.height(24.dp)
+            modifier =
+                Modifier.height(24.dp)
         )
 
         if (currentTrack == null) {
 
             Text(
-                text = "No music detected",
-                style = MaterialTheme.typography.headlineSmall
+                text =
+                    "No music detected",
+                style =
+                    MaterialTheme
+                        .typography
+                        .headlineSmall
             )
 
             Spacer(
-                modifier = Modifier.height(16.dp)
+                modifier =
+                    Modifier.height(16.dp)
             )
 
             Button(
                 onClick = onBack,
-                modifier = Modifier.fillMaxWidth()
+                modifier =
+                    Modifier.fillMaxWidth()
             ) {
-                Text("Back")
+
+                Text(
+                    text = "Back"
+                )
             }
 
             return@Column
@@ -119,25 +165,35 @@ fun PreviewScreen(
         if (previewState.isGenerating) {
 
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(500.dp),
-                contentAlignment = Alignment.Center
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(500.dp),
+                contentAlignment =
+                    Alignment.Center
             ) {
 
                 CircularProgressIndicator()
             }
 
-        } else if (previewState.bitmap != null) {
+        } else if (
+            previewState.bitmap != null
+        ) {
 
             Image(
                 bitmap =
-                    previewState.bitmap!!.asImageBitmap(),
+                    previewState
+                        .bitmap!!
+                        .asImageBitmap(),
+
                 contentDescription =
                     "Generated wallpaper preview",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight(),
+
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .fillMaxHeight(),
+
                 contentScale =
                     ContentScale.Fit
             )
@@ -145,88 +201,144 @@ fun PreviewScreen(
         } else {
 
             Text(
-                text = "No wallpaper generated yet",
-                style = MaterialTheme.typography.bodyLarge
+                text =
+                    "No wallpaper generated yet",
+                style =
+                    MaterialTheme
+                        .typography
+                        .bodyLarge
             )
         }
 
-        if (previewState.error != null) {
+        if (
+            previewState.error != null
+        ) {
 
             Spacer(
-                modifier = Modifier.height(16.dp)
+                modifier =
+                    Modifier.height(16.dp)
             )
 
             Text(
-                text = previewState.error!!,
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodyMedium
+                text =
+                    previewState.error!!,
+                color =
+                    MaterialTheme
+                        .colorScheme
+                        .error,
+                style =
+                    MaterialTheme
+                        .typography
+                        .bodyMedium
             )
         }
 
         Spacer(
-            modifier = Modifier.height(24.dp)
+            modifier =
+                Modifier.height(24.dp)
         )
 
         Text(
-            text = currentTrack.title,
-            style = MaterialTheme.typography.titleLarge
+            text =
+                currentTrack.title,
+            style =
+                MaterialTheme
+                    .typography
+                    .titleLarge
         )
 
         Text(
-            text = currentTrack.artist,
-            style = MaterialTheme.typography.bodyMedium
+            text =
+                currentTrack.artist,
+            style =
+                MaterialTheme
+                    .typography
+                    .bodyMedium
         )
 
         if (currentSettings != null) {
 
             Spacer(
-                modifier = Modifier.height(8.dp)
+                modifier =
+                    Modifier.height(8.dp)
             )
 
             Text(
                 text =
-                    "Style: ${currentSettings.selectedStyle.displayName}",
-                style = MaterialTheme.typography.bodyMedium
+                    "Style: " +
+                            currentSettings
+                                .selectedStyle
+                                .displayName,
+
+                style =
+                    MaterialTheme
+                        .typography
+                        .bodyMedium
             )
         }
 
         Spacer(
-            modifier = Modifier.height(24.dp)
+            modifier =
+                Modifier.height(24.dp)
         )
 
         Button(
-            modifier = Modifier.fillMaxWidth(),
+            modifier =
+                Modifier.fillMaxWidth(),
+
             enabled =
                 currentSettings != null &&
                         !previewState.isGenerating,
+
             onClick = {
 
                 val style =
-                    currentSettings?.selectedStyle
+                    currentSettings
+                        ?.selectedStyle
                         ?: return@Button
 
                 viewModel.generateWallpaper(
-                    track = currentTrack,
-                    style = style
+                    track =
+                        currentTrack,
+
+                    style =
+                        style,
+
+                    width =
+                        wallpaperWidth,
+
+                    height =
+                        wallpaperHeight
                 )
             }
         ) {
-            Text("Generate Wallpaper")
+
+            Text(
+                text =
+                    "Generate Wallpaper"
+            )
         }
 
         Spacer(
-            modifier = Modifier.height(12.dp)
+            modifier =
+                Modifier.height(12.dp)
         )
 
         Button(
             onClick = onBack,
-            modifier = Modifier.fillMaxWidth()
+            modifier =
+                Modifier.fillMaxWidth()
         ) {
-            Text("Back")
+
+            Text(
+                text =
+                    "Back"
+            )
         }
 
         Spacer(
-            modifier = Modifier.height(24.dp)
+            modifier =
+                Modifier.height(24.dp)
         )
     }
 }

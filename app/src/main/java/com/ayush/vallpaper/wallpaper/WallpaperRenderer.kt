@@ -25,16 +25,39 @@ class WallpaperRenderer {
     fun render(
         track: Track,
         artwork: Bitmap?,
-        style: WallpaperStyle
+        style: WallpaperStyle,
+        width: Int = 1080,
+        height: Int = 2400
     ): Bitmap {
+
+        require(width > 0) {
+            "Wallpaper width must be greater than zero"
+        }
+
+        require(height > 0) {
+            "Wallpaper height must be greater than zero"
+        }
+
+        val requestedPixels =
+            width.toLong() *
+                    height.toLong()
+
+        require(requestedPixels <= 20_000_000L) {
+            "Requested wallpaper dimensions are too large"
+        }
+
+        val safeWidth =
+            width.coerceAtLeast(1)
+
+        val safeHeight =
+            height.coerceAtLeast(1)
 
         val bitmap =
             Bitmap.createBitmap(
-                WALLPAPER_WIDTH,
-                WALLPAPER_HEIGHT,
+                safeWidth,
+                safeHeight,
                 Bitmap.Config.ARGB_8888
             )
-
         val canvas =
             Canvas(bitmap)
 
@@ -1441,26 +1464,90 @@ class WallpaperRenderer {
         targetHeight: Int
     ): Bitmap {
 
+        require(targetWidth > 0) {
+            "Target width must be greater than zero"
+        }
+
+        require(targetHeight > 0) {
+            "Target height must be greater than zero"
+        }
+
+        /*
+         * Prevent accidental allocation of extremely large bitmaps.
+         *
+         * 20 megapixels is already considerably larger than what
+         * a normal phone wallpaper requires.
+         */
+        val targetPixels =
+            targetWidth.toLong() *
+                    targetHeight.toLong()
+
+        val maxPixels =
+            20_000_000L
+
+        require(targetPixels <= maxPixels) {
+            "Requested wallpaper size is too large"
+        }
+
+        /*
+         * If the bitmap already has exactly the required
+         * dimensions, don't create another bitmap.
+         */
+        if (
+            bitmap.width == targetWidth &&
+            bitmap.height == targetHeight
+        ) {
+            return bitmap
+        }
+
         val sourceWidth =
             bitmap.width.toFloat()
 
         val sourceHeight =
             bitmap.height.toFloat()
 
+        if (
+            sourceWidth <= 0f ||
+            sourceHeight <= 0f
+        ) {
+            throw IllegalArgumentException(
+                "Invalid source bitmap dimensions"
+            )
+        }
+
+        /*
+         * Center-crop scaling.
+         *
+         * The larger scale factor is used so the complete
+         * destination area is covered.
+         */
         val scale =
             maxOf(
-                targetWidth /
-                        sourceWidth,
-                targetHeight /
-                        sourceHeight
+                targetWidth / sourceWidth,
+                targetHeight / sourceHeight
             )
 
         val scaledWidth =
-            (sourceWidth * scale).toInt()
+            (sourceWidth * scale)
+                .toInt()
+                .coerceAtLeast(targetWidth)
 
         val scaledHeight =
-            (sourceHeight * scale).toInt()
+            (sourceHeight * scale)
+                .toInt()
+                .coerceAtLeast(targetHeight)
 
+        val scaledPixels =
+            scaledWidth.toLong() *
+                    scaledHeight.toLong()
+
+        require(scaledPixels <= maxPixels) {
+            "Scaled artwork is too large"
+        }
+
+        /*
+         * Create the intermediate scaled bitmap.
+         */
         val scaledBitmap =
             Bitmap.createScaledBitmap(
                 bitmap,
@@ -1469,26 +1556,54 @@ class WallpaperRenderer {
                 true
             )
 
-        val left =
-            maxOf(
-                0,
-                (scaledWidth -
-                        targetWidth) / 2
+        /*
+         * Calculate the centered crop.
+         */
+        val cropLeft =
+            ((scaledWidth - targetWidth) / 2)
+                .coerceAtLeast(0)
+
+        val cropTop =
+            ((scaledHeight - targetHeight) / 2)
+                .coerceAtLeast(0)
+
+        /*
+         * If scaling already produced exactly the target
+         * dimensions, return it directly.
+         */
+        if (
+            scaledWidth == targetWidth &&
+            scaledHeight == targetHeight
+        ) {
+            return scaledBitmap
+        }
+
+        /*
+         * Create the final cropped bitmap.
+         */
+        val result =
+            Bitmap.createBitmap(
+                scaledBitmap,
+                cropLeft,
+                cropTop,
+                targetWidth,
+                targetHeight
             )
 
-        val top =
-            maxOf(
-                0,
-                (scaledHeight -
-                        targetHeight) / 2
-            )
+        /*
+         * The intermediate bitmap is no longer required.
+         *
+         * createBitmap() has copied the required region into
+         * the resulting bitmap, so the temporary bitmap can
+         * safely be recycled here.
+         */
+        if (
+            result !== scaledBitmap &&
+            !scaledBitmap.isRecycled
+        ) {
+            scaledBitmap.recycle()
+        }
 
-        return Bitmap.createBitmap(
-            scaledBitmap,
-            left,
-            top,
-            targetWidth,
-            targetHeight
-        )
+        return result
     }
 }

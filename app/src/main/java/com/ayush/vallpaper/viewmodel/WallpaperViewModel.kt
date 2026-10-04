@@ -32,8 +32,11 @@ class WallpaperViewModel(
 
     fun generateWallpaper(
         track: Track,
-        style: WallpaperStyle
+        style: WallpaperStyle,
+        width: Int,
+        height: Int
     ) {
+
         viewModelScope.launch(
             Dispatchers.Default
         ) {
@@ -48,7 +51,9 @@ class WallpaperViewModel(
                 val wallpaper =
                     generator.generate(
                         track = track,
-                        style = style
+                        style = style,
+                        width = width,
+                        height = height
                     )
 
                 _previewState.value =
@@ -71,6 +76,7 @@ class WallpaperViewModel(
     }
 
     fun clearPreview() {
+
         _previewState.value =
             WallpaperPreviewState()
     }

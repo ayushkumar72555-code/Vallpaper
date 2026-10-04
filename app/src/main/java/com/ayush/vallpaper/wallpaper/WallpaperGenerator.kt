@@ -11,7 +11,9 @@ class WallpaperGenerator(
 
     suspend fun generate(
         track: Track,
-        style: WallpaperStyle
+        style: WallpaperStyle,
+        width: Int,
+        height: Int
     ): Bitmap {
 
         val artwork =
@@ -22,7 +24,9 @@ class WallpaperGenerator(
         return renderer.render(
             track = track,
             artwork = artwork,
-            style = style
+            style = style,
+            width = width,
+            height = height
         )
     }
 }
