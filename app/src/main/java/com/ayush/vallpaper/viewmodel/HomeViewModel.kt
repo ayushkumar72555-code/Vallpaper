@@ -3,9 +3,9 @@ package com.ayush.vallpaper.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ayush.vallpaper.data.AppSettingsRepository
-import com.ayush.vallpaper.data.MockTrackRepository
 import com.ayush.vallpaper.domain.model.Track
 import com.ayush.vallpaper.domain.model.WallpaperStyle
+import com.ayush.vallpaper.domain.repository.TrackRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
@@ -19,7 +19,7 @@ data class HomeUiState(
 )
 
 class HomeViewModel(
-    private val trackRepository: MockTrackRepository,
+    private val trackRepository: TrackRepository,
     private val settingsRepository: AppSettingsRepository
 ) : ViewModel() {
 
