@@ -86,7 +86,9 @@ fun WallpaperPreviewScreen(
                 Image(
                     bitmap = bitmap.asImageBitmap(),
                     contentDescription = "Full screen wallpaper preview",
-                    modifier = Modifier.fillMaxWidth().aspectRatio(9f / 16f),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(9f / 16f),
                     contentScale = ContentScale.Fit
                 )
             }
