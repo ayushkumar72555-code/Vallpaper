@@ -31,7 +31,8 @@ class WallpaperGenerator(
             )
 
         return LockscreenSafeZoneRenderer.apply(
-            wallpaper
+            bitmap = wallpaper,
+            style = style
         )
     }
 }
