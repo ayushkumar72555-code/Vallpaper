@@ -16,9 +16,8 @@ import kotlin.math.min
 class WallpaperRenderer {
 
     companion object {
-        private const val WALLPAPER_WIDTH = 1080
-        private const val WALLPAPER_HEIGHT = 2400
         private const val SIDE_PADDING = 72f
+        private const val MAX_PIXELS = 20_000_000L
     }
 
     fun render(
@@ -30,13 +29,11 @@ class WallpaperRenderer {
     ): Bitmap {
         require(width > 0) { "Wallpaper width must be greater than zero" }
         require(height > 0) { "Wallpaper height must be greater than zero" }
+        require(width.toLong() * height.toLong() <= MAX_PIXELS) {
+            "Requested wallpaper dimensions are too large"
+        }
 
-        val requestedPixels = width.toLong() * height.toLong()
-        require(requestedPixels <= 20_000_000L) { "Requested wallpaper dimensions are too large" }
-
-        val safeWidth = width.coerceAtLeast(1)
-        val safeHeight = height.coerceAtLeast(1)
-        val bitmap = Bitmap.createBitmap(safeWidth, safeHeight, Bitmap.Config.ARGB_8888)
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
 
         val safeArtwork = artwork?.let { source ->
@@ -75,41 +72,50 @@ class WallpaperRenderer {
         val artworkLeft = (width - fullScreenArtwork.width) / 2f
         val artworkTop = (height - fullScreenArtwork.height) / 2f
 
-        val artworkPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { isFilterBitmap = true }
+        val artworkPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            isFilterBitmap = true
+        }
         canvas.drawBitmap(fullScreenArtwork, artworkLeft, artworkTop, artworkPaint)
 
+        // Keep the artwork visible across the entire screen. This is deliberately
+        // a subtle readability overlay, not the previous near-black bottom fade.
         val overallOverlay = LinearGradient(
             0f,
             0f,
             0f,
             height,
             intArrayOf(
-                Color.argb(25, 0, 0, 0),
-                Color.argb(15, 0, 0, 0),
-                Color.argb(90, 0, 0, 0)
+                Color.argb(18, 0, 0, 0),
+                Color.argb(8, 0, 0, 0),
+                Color.argb(45, 0, 0, 0)
             ),
             floatArrayOf(0f, 0.55f, 1f),
             Shader.TileMode.CLAMP
         )
-        val overlayPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { shader = overallOverlay }
+        val overlayPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            shader = overallOverlay
+        }
         canvas.drawRect(0f, 0f, width, height, overlayPaint)
 
-        val bottomGradient = LinearGradient(
+        // A restrained gradient behind the text keeps it readable while preserving
+        // the artwork. It never becomes an opaque black panel.
+        val textGradient = LinearGradient(
             0f,
-            height * 0.48f,
+            height * 0.68f,
             0f,
             height,
             intArrayOf(
                 Color.argb(0, 0, 0, 0),
-                Color.argb(45, 0, 0, 0),
-                Color.argb(215, 0, 0, 0),
-                Color.argb(245, 0, 0, 0)
+                Color.argb(18, 0, 0, 0),
+                Color.argb(75, 0, 0, 0)
             ),
-            floatArrayOf(0f, 0.35f, 0.78f, 1f),
+            floatArrayOf(0f, 0.45f, 1f),
             Shader.TileMode.CLAMP
         )
-        val bottomGradientPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { shader = bottomGradient }
-        canvas.drawRect(0f, height * 0.42f, width, height, bottomGradientPaint)
+        val textGradientPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            shader = textGradient
+        }
+        canvas.drawRect(0f, height * 0.62f, width, height, textGradientPaint)
 
         drawCoverText(canvas, track, width, height)
     }
@@ -120,18 +126,21 @@ class WallpaperRenderer {
             textSize = 62f
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
             isSubpixelText = true
+            setShadowLayer(8f, 0f, 2f, Color.argb(120, 0, 0, 0))
         }
         val artistPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.WHITE
-            alpha = 225
+            alpha = 235
             textSize = 40f
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
             isSubpixelText = true
+            setShadowLayer(6f, 0f, 2f, Color.argb(110, 0, 0, 0))
         }
         val albumPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.WHITE
-            alpha = 175
+            alpha = 190
             textSize = 30f
+            setShadowLayer(5f, 0f, 2f, Color.argb(100, 0, 0, 0))
         }
 
         val textX = SIDE_PADDING
@@ -146,7 +155,7 @@ class WallpaperRenderer {
     }
 
     // ================================================================
-    // VINYL
+    // VINYL STYLE
     // ================================================================
 
     private fun renderVinyl(canvas: Canvas, track: Track, artwork: Bitmap?) {
@@ -483,8 +492,7 @@ class WallpaperRenderer {
         require(targetHeight > 0) { "Target height must be greater than zero" }
 
         val targetPixels = targetWidth.toLong() * targetHeight.toLong()
-        val maxPixels = 20_000_000L
-        require(targetPixels <= maxPixels) { "Requested wallpaper size is too large" }
+        require(targetPixels <= MAX_PIXELS) { "Requested wallpaper size is too large" }
 
         if (bitmap.width == targetWidth && bitmap.height == targetHeight) return bitmap
 
@@ -498,15 +506,26 @@ class WallpaperRenderer {
         val scaledWidth = (sourceWidth * scale).toInt().coerceAtLeast(targetWidth)
         val scaledHeight = (sourceHeight * scale).toInt().coerceAtLeast(targetHeight)
         val scaledPixels = scaledWidth.toLong() * scaledHeight.toLong()
-        require(scaledPixels <= maxPixels) { "Scaled artwork is too large" }
+        require(scaledPixels <= MAX_PIXELS) { "Scaled artwork is too large" }
 
         val scaledBitmap = Bitmap.createBitmap(scaledWidth, scaledHeight, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(scaledBitmap)
         val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { isFilterBitmap = true }
-        canvas.drawBitmap(bitmap, null, RectF(0f, 0f, scaledWidth.toFloat(), scaledHeight.toFloat()), paint)
+        canvas.drawBitmap(
+            bitmap,
+            null,
+            RectF(0f, 0f, scaledWidth.toFloat(), scaledHeight.toFloat()),
+            paint
+        )
 
         val cropLeft = ((scaledWidth - targetWidth) / 2f).coerceAtLeast(0f)
         val cropTop = ((scaledHeight - targetHeight) / 2f).coerceAtLeast(0f)
-        return Bitmap.createBitmap(scaledBitmap, cropLeft.toInt(), cropTop.toInt(), targetWidth, targetHeight)
+        return Bitmap.createBitmap(
+            scaledBitmap,
+            cropLeft.toInt(),
+            cropTop.toInt(),
+            targetWidth,
+            targetHeight
+        )
     }
 }
