@@ -13,31 +13,37 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.ayush.vallpaper.data.AppContainer
+import com.ayush.vallpaper.VallpaperApplication
 import com.ayush.vallpaper.domain.model.WallpaperStyle
 import com.ayush.vallpaper.ui.components.WallpaperStyleCard
+import com.ayush.vallpaper.viewmodel.AppViewModelFactory
 import com.ayush.vallpaper.viewmodel.HomeViewModel
-import com.ayush.vallpaper.viewmodel.HomeViewModelFactory
 
 @Composable
 fun StylesScreen() {
 
-    val viewModel: HomeViewModel = viewModel(
-        factory = HomeViewModelFactory(
-            trackRepository = AppContainer.trackRepository,
-            settingsRepository = AppContainer.settingsRepository
-        )
-    )
+    val application =
+        LocalContext.current.applicationContext
+            as VallpaperApplication
 
-    val state by viewModel.uiState.collectAsState()
+    val viewModel: HomeViewModel =
+        viewModel(
+            factory =
+                AppViewModelFactory(application)
+        )
+
+    val state by
+        viewModel.uiState.collectAsState()
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(20.dp)
     ) {
+
         Text(
             text = "Styles",
             style = MaterialTheme.typography.headlineMedium
@@ -45,14 +51,19 @@ fun StylesScreen() {
 
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement =
+                Arrangement.spacedBy(12.dp),
+            horizontalArrangement =
+                Arrangement.spacedBy(12.dp),
             modifier = Modifier.padding(top = 24.dp)
         ) {
+
             items(WallpaperStyle.entries) { style ->
+
                 WallpaperStyleCard(
                     style = style,
-                    selected = state.selectedStyle == style,
+                    selected =
+                        state.selectedStyle == style,
                     onClick = {
                         viewModel.selectStyle(style)
                     }
