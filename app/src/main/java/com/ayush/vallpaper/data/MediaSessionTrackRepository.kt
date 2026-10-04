@@ -2,14 +2,18 @@ package com.ayush.vallpaper.data
 
 import android.content.ComponentName
 import android.content.Context
+import android.graphics.Bitmap
 import android.media.MediaMetadata
 import android.media.session.MediaController
 import android.media.session.MediaSessionManager
+import android.net.Uri
 import com.ayush.vallpaper.domain.model.Track
 import com.ayush.vallpaper.domain.repository.TrackRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import java.io.File
+import java.io.FileOutputStream
 
 class MediaSessionTrackRepository(
     private val context: Context
@@ -179,18 +183,18 @@ class MediaSessionTrackRepository(
             MediaMetadata.METADATA_KEY_ALBUM
         ).orEmpty()
 
-        val artworkUri = findArtworkUri(metadata)
+        val artworkUrl = resolveArtwork(metadata)
 
         return Track(
             id = "${controller.packageName}:$title:$artist",
             title = title,
             artist = artist.ifBlank { "Unknown artist" },
             album = album.ifBlank { "Unknown album" },
-            artworkUrl = artworkUri
+            artworkUrl = artworkUrl
         )
     }
 
-    private fun findArtworkUri(
+    private fun resolveArtwork(
         metadata: MediaMetadata
     ): String {
         val artworkKeys = listOf(
@@ -206,9 +210,75 @@ class MediaSessionTrackRepository(
             }
         }
 
-        return metadata.description
-            ?.iconUri
-            ?.toString()
-            .orEmpty()
+        metadata.description?.iconUri?.toString()?.let { uri ->
+            if (uri.isNotBlank()) {
+                return uri
+            }
+        }
+
+        val bitmap = findArtworkBitmap(metadata)
+        if (bitmap != null) {
+            return saveArtwork(bitmap, metadata)
+        }
+
+        return ""
+    }
+
+    private fun findArtworkBitmap(
+        metadata: MediaMetadata
+    ): Bitmap? {
+        val bitmapKeys = listOf(
+            MediaMetadata.METADATA_KEY_ALBUM_ART,
+            MediaMetadata.METADATA_KEY_ART,
+            MediaMetadata.METADATA_KEY_DISPLAY_ICON
+        )
+
+        for (key in bitmapKeys) {
+            metadata.getBitmap(key)?.let { bitmap ->
+                return bitmap
+            }
+        }
+
+        return null
+    }
+
+    private fun saveArtwork(
+        bitmap: Bitmap,
+        metadata: MediaMetadata
+    ): String {
+        return try {
+            val artworkDirectory =
+                File(context.cacheDir, "media_artwork")
+
+            if (!artworkDirectory.exists()) {
+                artworkDirectory.mkdirs()
+            }
+
+            val title = metadata.getString(
+                MediaMetadata.METADATA_KEY_TITLE
+            ).orEmpty()
+
+            val safeName = title
+                .ifBlank { "unknown" }
+                .replace(Regex("[^A-Za-z0-9._-]"), "_")
+                .take(80)
+
+            val file = File(
+                artworkDirectory,
+                "$safeName.jpg"
+            )
+
+            FileOutputStream(file).use { output ->
+                bitmap.compress(
+                    Bitmap.CompressFormat.JPEG,
+                    95,
+                    output
+                )
+            }
+
+            Uri.fromFile(file).toString()
+        } catch (_: Exception) {
+            ""
+        }
     }
 }
