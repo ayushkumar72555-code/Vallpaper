@@ -38,8 +38,8 @@ class HomeViewModel(
             started = SharingStarted.WhileSubscribed(5_000),
             initialValue = HomeUiState(
                 track = trackRepository.currentTrack.value,
-                selectedStyle = settingsRepository.settings.value.selectedStyle,
-                automaticWallpaper = settingsRepository.settings.value.automaticWallpaper
+                selectedStyle = WallpaperStyle.AMBIENT,
+                automaticWallpaper = true
             )
         )
 

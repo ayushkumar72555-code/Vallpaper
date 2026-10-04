@@ -11,16 +11,21 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.ayush.vallpaper.data.MockTrackRepository
+import com.ayush.vallpaper.VallpaperApplication
 import com.ayush.vallpaper.ui.components.AlbumArtwork
 
 @Composable
 fun PreviewScreen(
     onBack: () -> Unit
 ) {
-    val track = MockTrackRepository().getCurrentTrack()
+    val context = LocalContext.current
+    val application = context.applicationContext as VallpaperApplication
+    val track by application.trackRepository.currentTrack.collectAsState()
 
     Column(
         modifier = Modifier
@@ -36,19 +41,21 @@ fun PreviewScreen(
         Spacer(modifier = Modifier.height(32.dp))
 
         if (track != null) {
-            AlbumArtwork(
-                imageUrl = track.artworkUrl,
-                modifier = Modifier.fillMaxWidth()
-            )
+            if (track!!.artworkUrl.isNotBlank()) {
+                AlbumArtwork(
+                    imageUrl = track!!.artworkUrl,
+                    modifier = Modifier.fillMaxWidth()
+                )
 
-            Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(24.dp))
+            }
 
             Text(
-                text = track.title,
+                text = track!!.title,
                 style = MaterialTheme.typography.titleLarge
             )
             Text(
-                text = track.artist,
+                text = track!!.artist,
                 style = MaterialTheme.typography.bodyMedium
             )
         }

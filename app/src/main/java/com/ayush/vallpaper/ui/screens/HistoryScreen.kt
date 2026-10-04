@@ -8,16 +8,19 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.ayush.vallpaper.data.MockTrackRepository
+import com.ayush.vallpaper.VallpaperApplication
 import com.ayush.vallpaper.ui.components.AlbumArtwork
 
 @Composable
 fun HistoryScreen() {
-
-    val history =
-        MockTrackRepository().getHistory()
+    val context = LocalContext.current
+    val application = context.applicationContext as VallpaperApplication
+    val history by application.trackRepository.history.collectAsState()
 
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
