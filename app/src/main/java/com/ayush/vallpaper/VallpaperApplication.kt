@@ -15,6 +15,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
@@ -45,7 +47,6 @@ class VallpaperApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
-
         trackRepository.start()
         startAutomaticWallpaperUpdates()
     }
@@ -61,12 +62,17 @@ class VallpaperApplication : Application() {
                 .distinctUntilChanged { old, new ->
                     old.key == new.key
                 }
-                .collect { request ->
-                    if (!request.settings.automaticWallpaper) {
-                        return@collect
+                .collectLatest { request ->
+                    if (!request.settings.automaticWallpaper) return@collectLatest
+
+                    if (!request.settings.applyToHomeScreen &&
+                        !request.settings.applyToLockScreen
+                    ) {
+                        Log.d(TAG, "Automatic wallpaper enabled, but no target is enabled")
+                        return@collectLatest
                     }
 
-                    val track = request.track ?: return@collect
+                    val track = request.track ?: return@collectLatest
 
                     updateWallpaperAutomatically(
                         track = track,
@@ -80,6 +86,16 @@ class VallpaperApplication : Application() {
         track: Track,
         settings: AppSettings
     ) {
+        ensureActive()
+
+        if (track.artworkUrl.isBlank()) {
+            Log.d(
+                TAG,
+                "Skipping automatic wallpaper: no readable artwork for ${track.title}"
+            )
+            return
+        }
+
         val metrics = resources.displayMetrics
         val width = metrics.widthPixels.coerceAtLeast(1)
         val height = metrics.heightPixels.coerceAtLeast(1)
@@ -99,6 +115,8 @@ class VallpaperApplication : Application() {
                 height = height
             )
 
+            ensureActive()
+
             if (settings.applyToHomeScreen) {
                 WallpaperApplier.apply(
                     context = applicationContext,
@@ -112,6 +130,8 @@ class VallpaperApplication : Application() {
                     )
                 }
             }
+
+            ensureActive()
 
             if (settings.applyToLockScreen) {
                 WallpaperApplier.apply(
@@ -127,10 +147,10 @@ class VallpaperApplication : Application() {
                 }
             }
 
-            Log.d(
-                TAG,
-                "Automatic wallpaper update complete"
-            )
+            Log.d(TAG, "Automatic wallpaper update complete")
+        } catch (exception: kotlinx.coroutines.CancellationException) {
+            Log.d(TAG, "Automatic wallpaper update cancelled for ${track.title}")
+            throw exception
         } catch (exception: Exception) {
             Log.e(
                 TAG,
