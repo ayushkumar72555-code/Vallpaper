@@ -8,7 +8,7 @@ import com.ayush.vallpaper.domain.model.WallpaperStyle
 import com.ayush.vallpaper.domain.repository.TrackRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -24,21 +24,24 @@ class HomeViewModel(
 ) : ViewModel() {
 
     val uiState: StateFlow<HomeUiState> =
-        settingsRepository.settings
-            .map { settings ->
-                HomeUiState(
-                    track = trackRepository.getCurrentTrack(),
-                    selectedStyle = settings.selectedStyle,
-                    automaticWallpaper = settings.automaticWallpaper
-                )
-            }
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5_000),
-                initialValue = HomeUiState(
-                    track = trackRepository.getCurrentTrack()
-                )
+        combine(
+            trackRepository.currentTrack,
+            settingsRepository.settings
+        ) { track, settings ->
+            HomeUiState(
+                track = track,
+                selectedStyle = settings.selectedStyle,
+                automaticWallpaper = settings.automaticWallpaper
             )
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = HomeUiState(
+                track = trackRepository.currentTrack.value,
+                selectedStyle = settingsRepository.settings.value.selectedStyle,
+                automaticWallpaper = settingsRepository.settings.value.automaticWallpaper
+            )
+        )
 
     fun selectStyle(style: WallpaperStyle) {
         viewModelScope.launch {
