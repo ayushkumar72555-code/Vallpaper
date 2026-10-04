@@ -16,8 +16,7 @@ import kotlinx.coroutines.launch
 
 data class HomeUiState(
     val track: Track? = null,
-    val selectedStyle: WallpaperStyle =
-        WallpaperStyle.AMBIENT,
+    val selectedStyle: WallpaperStyle = WallpaperStyle.AMBIENT,
     val automaticWallpaper: Boolean = true,
     val generatedWallpaper: Bitmap? = null,
     val isGenerating: Boolean = false,
@@ -30,64 +29,57 @@ class HomeViewModel(
     private val wallpaperGenerator: WallpaperGenerator
 ) : ViewModel() {
 
-    private val _uiState =
-        MutableStateFlow(
-            HomeUiState()
-        )
+    private val _uiState = MutableStateFlow(HomeUiState())
 
-    val uiState: StateFlow<HomeUiState> =
-        _uiState.asStateFlow()
+    val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
     init {
-
         viewModelScope.launch {
-
-            trackRepository.currentTrack
-                .collect { track ->
-
-                    _uiState.value =
-                        _uiState.value.copy(
-                            track = track
-                        )
-                }
+            trackRepository.currentTrack.collect { track ->
+                _uiState.value = _uiState.value.copy(track = track)
+            }
         }
 
         viewModelScope.launch {
-
-            settingsRepository.settings
-                .collect { settings ->
-
-                    _uiState.value =
-                        _uiState.value.copy(
-                            selectedStyle =
-                                settings.selectedStyle,
-                            automaticWallpaper =
-                                settings.automaticWallpaper
-                        )
-                }
+            settingsRepository.settings.collect { settings ->
+                _uiState.value = _uiState.value.copy(
+                    selectedStyle = settings.selectedStyle,
+                    automaticWallpaper = settings.automaticWallpaper
+                )
+            }
         }
     }
 
-    fun selectStyle(
-        style: WallpaperStyle
+    fun selectStyle(style: WallpaperStyle) {
+        viewModelScope.launch {
+            settingsRepository.setSelectedStyle(style)
+        }
+    }
+
+    fun selectStyleAndGenerate(
+        style: WallpaperStyle,
+        width: Int,
+        height: Int
     ) {
+        val currentTrack = _uiState.value.track ?: return
 
         viewModelScope.launch {
-
-            settingsRepository
-                .setSelectedStyle(style)
+            settingsRepository.setSelectedStyle(style)
         }
+
+        generateWallpaper(
+            style = style,
+            track = currentTrack,
+            width = width,
+            height = height
+        )
     }
 
     fun toggleAutomaticWallpaper() {
-
         viewModelScope.launch {
-
-            settingsRepository
-                .setAutomaticWallpaper(
-                    !_uiState.value
-                        .automaticWallpaper
-                )
+            settingsRepository.setAutomaticWallpaper(
+                !_uiState.value.automaticWallpaper
+            )
         }
     }
 
@@ -95,65 +87,56 @@ class HomeViewModel(
         width: Int,
         height: Int
     ) {
+        val currentTrack = _uiState.value.track ?: return
+        val currentStyle = _uiState.value.selectedStyle
 
-        val currentTrack =
-            _uiState.value.track
-                ?: return
+        generateWallpaper(
+            style = currentStyle,
+            track = currentTrack,
+            width = width,
+            height = height
+        )
+    }
 
-        val currentStyle =
-            _uiState.value.selectedStyle
-
-        viewModelScope.launch(
-            Dispatchers.Default
-        ) {
-
-            _uiState.value =
-                _uiState.value.copy(
-                    isGenerating = true,
-                    generationError = null
-                )
+    private fun generateWallpaper(
+        style: WallpaperStyle,
+        track: Track,
+        width: Int,
+        height: Int
+    ) {
+        viewModelScope.launch(Dispatchers.Default) {
+            _uiState.value = _uiState.value.copy(
+                isGenerating = true,
+                generationError = null
+            )
 
             try {
+                val wallpaper = wallpaperGenerator.generate(
+                    track = track,
+                    style = style,
+                    width = width,
+                    height = height
+                )
 
-                val wallpaper =
-                    wallpaperGenerator.generate(
-                        track =
-                            currentTrack,
-                        style =
-                            currentStyle,
-                        width =
-                            width,
-                        height =
-                            height
-                    )
-
-                _uiState.value =
-                    _uiState.value.copy(
-                        generatedWallpaper =
-                            wallpaper,
-                        isGenerating = false,
-                        generationError = null
-                    )
-
+                _uiState.value = _uiState.value.copy(
+                    generatedWallpaper = wallpaper,
+                    isGenerating = false,
+                    generationError = null
+                )
             } catch (exception: Exception) {
-
-                _uiState.value =
-                    _uiState.value.copy(
-                        isGenerating = false,
-                        generationError =
-                            exception.message
-                                ?: "Unable to generate wallpaper"
-                    )
+                _uiState.value = _uiState.value.copy(
+                    isGenerating = false,
+                    generationError = exception.message
+                        ?: "Unable to generate wallpaper"
+                )
             }
         }
     }
 
     fun clearGeneratedWallpaper() {
-
-        _uiState.value =
-            _uiState.value.copy(
-                generatedWallpaper = null,
-                generationError = null
-            )
+        _uiState.value = _uiState.value.copy(
+            generatedWallpaper = null,
+            generationError = null
+        )
     }
 }
