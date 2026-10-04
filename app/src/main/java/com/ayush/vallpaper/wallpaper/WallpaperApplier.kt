@@ -3,7 +3,6 @@ package com.ayush.vallpaper.wallpaper
 import android.app.WallpaperManager
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.Rect
 import com.ayush.vallpaper.ui.screens.WallpaperTarget
 
 object WallpaperApplier {
@@ -22,16 +21,12 @@ object WallpaperApplier {
                 WallpaperTarget.BOTH -> WallpaperManager.FLAG_SYSTEM or WallpaperManager.FLAG_LOCK
             }
 
-            val fullImageRect = Rect(
-                0,
-                0,
-                bitmap.width,
-                bitmap.height
-            )
-
+            // Passing null tells WallpaperManager that the complete bitmap is
+            // the intended source image. Supplying a crop hint here can make
+            // some launchers reinterpret the bitmap bounds and crop it again.
             wallpaperManager.setBitmap(
                 bitmap,
-                fullImageRect,
+                null,
                 true,
                 flags
             )
