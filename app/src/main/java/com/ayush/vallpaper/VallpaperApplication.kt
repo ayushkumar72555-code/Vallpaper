@@ -6,14 +6,16 @@ import com.ayush.vallpaper.data.AppSettingsRepository
 import com.ayush.vallpaper.data.MediaSessionTrackRepository
 import com.ayush.vallpaper.domain.model.AppSettings
 import com.ayush.vallpaper.domain.model.Track
+import com.ayush.vallpaper.ui.screens.WallpaperTarget
+import com.ayush.vallpaper.wallpaper.ArtworkLoader
 import com.ayush.vallpaper.wallpaper.WallpaperApplier
 import com.ayush.vallpaper.wallpaper.WallpaperGenerator
-import com.ayush.vallpaper.ui.screens.WallpaperTarget
+import com.ayush.vallpaper.wallpaper.WallpaperRenderer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.combine
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 
@@ -32,7 +34,10 @@ class VallpaperApplication : Application() {
     }
 
     private val wallpaperGenerator by lazy {
-        WallpaperGenerator(applicationContext)
+        WallpaperGenerator(
+            artworkLoader = ArtworkLoader(applicationContext),
+            renderer = WallpaperRenderer()
+        )
     }
 
     private val applicationScope =
@@ -50,7 +55,7 @@ class VallpaperApplication : Application() {
             combine(
                 trackRepository.currentTrack,
                 settingsRepository.settings
-            ) { track, settings ->
+            ) { track: Track?, settings: AppSettings ->
                 AutomaticWallpaperRequest(track, settings)
             }
                 .distinctUntilChanged { old, new ->
@@ -79,13 +84,15 @@ class VallpaperApplication : Application() {
         val width = metrics.widthPixels.coerceAtLeast(1)
         val height = metrics.heightPixels.coerceAtLeast(1)
 
+        var bitmap: android.graphics.Bitmap? = null
+
         try {
             Log.d(
                 TAG,
                 "Generating automatic wallpaper for: ${track.title}"
             )
 
-            val bitmap = wallpaperGenerator.generate(
+            bitmap = wallpaperGenerator.generate(
                 track = track,
                 style = settings.selectedStyle,
                 width = width,
@@ -120,8 +127,6 @@ class VallpaperApplication : Application() {
                 }
             }
 
-            bitmap.recycle()
-
             Log.d(
                 TAG,
                 "Automatic wallpaper update complete"
@@ -132,6 +137,8 @@ class VallpaperApplication : Application() {
                 "Automatic wallpaper generation failed",
                 exception
             )
+        } finally {
+            bitmap?.recycle()
         }
     }
 
