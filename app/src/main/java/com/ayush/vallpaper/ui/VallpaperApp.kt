@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
@@ -14,30 +15,50 @@ import com.ayush.vallpaper.ui.navigation.AppNavigation
 @Composable
 fun VallpaperApp() {
 
-    val navController = rememberNavController()
+    val navController =
+        rememberNavController()
+
+    val backStackEntry by
+    navController.currentBackStackEntryAsState()
+
+    val currentRoute =
+        backStackEntry
+            ?.destination
+            ?.route
 
     Scaffold(
+
         bottomBar = {
+
             VallpaperBottomBar(
-                currentRoute =
-                    navController
-                        .currentBackStackEntryAsState()
-                        .value
-                        ?.destination
-                        ?.route,
+                currentRoute = currentRoute,
                 onNavigate = { route ->
-                    navController.navigate(route) {
-                        launchSingleTop = true
+
+                    if (route != currentRoute) {
+
+                        navController.navigate(route) {
+
+                            launchSingleTop = true
+
+                            popUpTo(
+                                navController.graph.startDestinationId
+                            ) {
+                                saveState = true
+                            }
+
+                            restoreState = true
+                        }
                     }
                 }
             )
         }
-    ) { padding ->
+
+    ) { paddingValues ->
 
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
+                .padding(paddingValues)
         ) {
 
             AppNavigation(
