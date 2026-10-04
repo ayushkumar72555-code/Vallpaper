@@ -52,6 +52,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.ayush.vallpaper.AutomaticWallpaperStatus
 import com.ayush.vallpaper.VallpaperApplication
 import com.ayush.vallpaper.domain.model.WallpaperStyle
 import com.ayush.vallpaper.ui.components.AlbumArtwork
@@ -69,6 +70,7 @@ fun HomeScreen() {
     val application = context.applicationContext as VallpaperApplication
     val viewModel: HomeViewModel = viewModel(factory = AppViewModelFactory(application))
     val state by viewModel.uiState.collectAsState()
+    val automaticStatus by application.automaticWallpaperStatus.collectAsState()
     val track = state.track
     var showSettings by remember { mutableStateOf(false) }
     var showFullPreview by remember { mutableStateOf(false) }
@@ -227,17 +229,39 @@ fun HomeScreen() {
 
         Spacer(Modifier.height(26.dp))
         RetroPanel(accent) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(15.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column(Modifier.weight(1f)) {
-                    Text("AUTO WALLPAPER", style = MaterialTheme.typography.titleMedium)
-                    Spacer(Modifier.height(2.dp))
-                    Text(if (state.automaticWallpaper) "UPDATES WITH MUSIC" else "MANUAL MODE", style = MaterialTheme.typography.bodySmall, color = accent)
+            Column(Modifier.padding(15.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text("AUTO WALLPAPER", style = MaterialTheme.typography.titleMedium)
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            if (state.automaticWallpaper) "UPDATES WITH MUSIC" else "MANUAL MODE",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = accent
+                        )
+                    }
+                    Switch(
+                        checked = state.automaticWallpaper,
+                        onCheckedChange = { viewModel.toggleAutomaticWallpaper() }
+                    )
                 }
-                Switch(checked = state.automaticWallpaper, onCheckedChange = { viewModel.toggleAutomaticWallpaper() })
+
+                if (state.automaticWallpaper) {
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        automaticStatusLabel(automaticStatus),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = when (automaticStatus) {
+                            AutomaticWallpaperStatus.ERROR -> MaterialTheme.colorScheme.error
+                            AutomaticWallpaperStatus.APPLIED -> accent
+                            else -> MaterialTheme.colorScheme.onSurfaceVariant
+                        }
+                    )
+                }
             }
         }
 
@@ -253,6 +277,19 @@ fun HomeScreen() {
             onHomeScreenChanged = { viewModel.setApplyToHomeScreen(it) },
             onLockScreenChanged = { viewModel.setApplyToLockScreen(it) }
         )
+    }
+}
+
+private fun automaticStatusLabel(status: AutomaticWallpaperStatus): String {
+    return when (status) {
+        AutomaticWallpaperStatus.IDLE -> "AUTOMATIC UPDATES OFF"
+        AutomaticWallpaperStatus.WAITING_FOR_MUSIC -> "WAITING FOR MUSIC"
+        AutomaticWallpaperStatus.WAITING_FOR_ARTWORK -> "WAITING FOR ARTWORK"
+        AutomaticWallpaperStatus.GENERATING -> "GENERATING WALLPAPER..."
+        AutomaticWallpaperStatus.APPLYING -> "APPLYING WALLPAPER..."
+        AutomaticWallpaperStatus.APPLIED -> "● AUTOMATIC WALLPAPER ACTIVE"
+        AutomaticWallpaperStatus.NO_TARGET -> "NO HOME OR LOCK TARGET SELECTED"
+        AutomaticWallpaperStatus.ERROR -> "AUTOMATIC UPDATE FAILED"
     }
 }
 
