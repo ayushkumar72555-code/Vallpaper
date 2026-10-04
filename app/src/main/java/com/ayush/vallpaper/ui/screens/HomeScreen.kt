@@ -15,12 +15,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.ayush.vallpaper.data.AppSettingsRepository
-import com.ayush.vallpaper.data.MockTrackRepository
+import com.ayush.vallpaper.data.AppContainer
 import com.ayush.vallpaper.ui.components.AlbumArtwork
 import com.ayush.vallpaper.viewmodel.HomeViewModel
 import com.ayush.vallpaper.viewmodel.HomeViewModelFactory
@@ -30,31 +28,14 @@ fun HomeScreen(
     onPreview: () -> Unit
 ) {
 
-    val trackRepository =
-        remember {
-            MockTrackRepository()
-        }
-
-    val settingsRepository =
-        remember {
-            AppSettingsRepository()
-        }
-
-    val viewModel: HomeViewModel =
-        viewModel(
-            factory =
-                HomeViewModelFactory(
-                    trackRepository =
-                        trackRepository,
-
-                    settingsRepository =
-                        settingsRepository
-                )
+    val viewModel: HomeViewModel = viewModel(
+        factory = HomeViewModelFactory(
+            trackRepository = AppContainer.trackRepository,
+            settingsRepository = AppContainer.settingsRepository
         )
+    )
 
-    val state by
-    viewModel.uiState.collectAsState()
-
+    val state by viewModel.uiState.collectAsState()
     val track = state.track
 
     if (track == null) {
@@ -65,128 +46,77 @@ fun HomeScreen(
         modifier = Modifier
             .fillMaxSize()
             .padding(24.dp),
-
-        verticalArrangement =
-            Arrangement.Center
+        verticalArrangement = Arrangement.Center
     ) {
-
         Text(
             text = "Vallpaper",
-            style =
-                MaterialTheme.typography.headlineMedium
+            style = MaterialTheme.typography.headlineMedium
         )
 
-        Spacer(
-            modifier =
-                Modifier.height(32.dp)
-        )
+        Spacer(modifier = Modifier.height(32.dp))
 
         AlbumArtwork(
             imageUrl = track.artworkUrl,
-            modifier =
-                Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth()
         )
 
-        Spacer(
-            modifier =
-                Modifier.height(24.dp)
-        )
+        Spacer(modifier = Modifier.height(24.dp))
 
         Text(
             text = track.title,
-            style =
-                MaterialTheme.typography.headlineSmall
+            style = MaterialTheme.typography.headlineSmall
         )
 
         Text(
             text = track.artist,
-            style =
-                MaterialTheme.typography.bodyLarge
+            style = MaterialTheme.typography.bodyLarge
         )
 
         Text(
             text = track.album,
-            style =
-                MaterialTheme.typography.bodyMedium
+            style = MaterialTheme.typography.bodyMedium
         )
 
-        Spacer(
-            modifier =
-                Modifier.height(24.dp)
-        )
+        Spacer(modifier = Modifier.height(24.dp))
 
         Row(
-            modifier =
-                Modifier.fillMaxWidth(),
-
-            horizontalArrangement =
-                Arrangement.SpaceBetween
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-
             Column {
-
+                Text(text = "Automatic Wallpaper")
                 Text(
-                    text =
-                        "Automatic Wallpaper"
-                )
-
-                Text(
-                    text =
-                        if (
-                            state.automaticWallpaper
-                        ) {
-                            "Enabled"
-                        } else {
-                            "Disabled"
-                        },
-
-                    style =
-                        MaterialTheme.typography.bodySmall
+                    text = if (state.automaticWallpaper) {
+                        "Enabled"
+                    } else {
+                        "Disabled"
+                    },
+                    style = MaterialTheme.typography.bodySmall
                 )
             }
 
             Switch(
-                checked =
-                    state.automaticWallpaper,
-
+                checked = state.automaticWallpaper,
                 onCheckedChange = {
-
-                    viewModel
-                        .toggleAutomaticWallpaper()
+                    viewModel.toggleAutomaticWallpaper()
                 }
             )
         }
 
-        Spacer(
-            modifier =
-                Modifier.height(16.dp)
-        )
+        Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text =
-                "Style: ${state.selectedStyle.displayName}",
-
-            style =
-                MaterialTheme.typography.bodyMedium
+            text = "Style: ${state.selectedStyle.displayName}",
+            style = MaterialTheme.typography.bodyMedium
         )
 
-        Spacer(
-            modifier =
-                Modifier.height(24.dp)
-        )
+        Spacer(modifier = Modifier.height(24.dp))
 
         Button(
-            modifier =
-                Modifier.fillMaxWidth(),
-
-            onClick =
-                onPreview
+            modifier = Modifier.fillMaxWidth(),
+            onClick = onPreview
         ) {
-
-            Text(
-                text =
-                    "Preview Wallpaper"
-            )
+            Text(text = "Preview Wallpaper")
         }
     }
 }
