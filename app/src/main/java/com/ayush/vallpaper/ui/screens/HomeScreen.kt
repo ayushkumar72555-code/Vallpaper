@@ -15,27 +15,33 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.ayush.vallpaper.data.AppContainer
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.ayush.vallpaper.VallpaperApplication
 import com.ayush.vallpaper.ui.components.AlbumArtwork
+import com.ayush.vallpaper.viewmodel.AppViewModelFactory
 import com.ayush.vallpaper.viewmodel.HomeViewModel
-import com.ayush.vallpaper.viewmodel.HomeViewModelFactory
 
 @Composable
 fun HomeScreen(
     onPreview: () -> Unit
 ) {
 
-    val viewModel: HomeViewModel = viewModel(
-        factory = HomeViewModelFactory(
-            trackRepository = AppContainer.trackRepository,
-            settingsRepository = AppContainer.settingsRepository
-        )
-    )
+    val application =
+        LocalContext.current.applicationContext
+            as VallpaperApplication
 
-    val state by viewModel.uiState.collectAsState()
+    val viewModel: HomeViewModel =
+        viewModel(
+            factory =
+                AppViewModelFactory(application)
+        )
+
+    val state by
+        viewModel.uiState.collectAsState()
+
     val track = state.track
 
     if (track == null) {
@@ -48,19 +54,24 @@ fun HomeScreen(
             .padding(24.dp),
         verticalArrangement = Arrangement.Center
     ) {
+
         Text(
             text = "Vallpaper",
             style = MaterialTheme.typography.headlineMedium
         )
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(
+            modifier = Modifier.height(32.dp)
+        )
 
         AlbumArtwork(
             imageUrl = track.artworkUrl,
             modifier = Modifier.fillMaxWidth()
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(
+            modifier = Modifier.height(24.dp)
+        )
 
         Text(
             text = track.title,
@@ -77,14 +88,21 @@ fun HomeScreen(
             style = MaterialTheme.typography.bodyMedium
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(
+            modifier = Modifier.height(24.dp)
+        )
 
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
+
             Column {
-                Text(text = "Automatic Wallpaper")
+
+                Text(
+                    text = "Automatic Wallpaper"
+                )
+
                 Text(
                     text = if (state.automaticWallpaper) {
                         "Enabled"
@@ -103,20 +121,27 @@ fun HomeScreen(
             )
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(
+            modifier = Modifier.height(16.dp)
+        )
 
         Text(
-            text = "Style: ${state.selectedStyle.displayName}",
+            text =
+                "Style: ${state.selectedStyle.displayName}",
             style = MaterialTheme.typography.bodyMedium
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(
+            modifier = Modifier.height(24.dp)
+        )
 
         Button(
             modifier = Modifier.fillMaxWidth(),
             onClick = onPreview
         ) {
-            Text(text = "Preview Wallpaper")
+            Text(
+                text = "Preview Wallpaper"
+            )
         }
     }
 }
