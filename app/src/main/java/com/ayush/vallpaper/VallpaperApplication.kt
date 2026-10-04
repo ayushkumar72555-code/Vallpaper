@@ -11,10 +11,12 @@ import com.ayush.vallpaper.wallpaper.ArtworkLoader
 import com.ayush.vallpaper.wallpaper.WallpaperApplier
 import com.ayush.vallpaper.wallpaper.WallpaperGenerator
 import com.ayush.vallpaper.wallpaper.WallpaperRenderer
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
@@ -86,7 +88,7 @@ class VallpaperApplication : Application() {
         track: Track,
         settings: AppSettings
     ) {
-        ensureActive()
+        currentCoroutineContext().ensureActive()
 
         if (track.artworkUrl.isBlank()) {
             Log.d(
@@ -115,7 +117,7 @@ class VallpaperApplication : Application() {
                 height = height
             )
 
-            ensureActive()
+            currentCoroutineContext().ensureActive()
 
             if (settings.applyToHomeScreen) {
                 WallpaperApplier.apply(
@@ -131,7 +133,7 @@ class VallpaperApplication : Application() {
                 }
             }
 
-            ensureActive()
+            currentCoroutineContext().ensureActive()
 
             if (settings.applyToLockScreen) {
                 WallpaperApplier.apply(
@@ -148,7 +150,7 @@ class VallpaperApplication : Application() {
             }
 
             Log.d(TAG, "Automatic wallpaper update complete")
-        } catch (exception: kotlinx.coroutines.CancellationException) {
+        } catch (exception: CancellationException) {
             Log.d(TAG, "Automatic wallpaper update cancelled for ${track.title}")
             throw exception
         } catch (exception: Exception) {
