@@ -172,7 +172,13 @@ fun HomeScreen() {
                 StyleCard(
                     style = style,
                     selected = state.selectedStyle == style,
-                    onClick = { viewModel.selectStyle(style) }
+                    onClick = {
+                        viewModel.selectStyleAndGenerate(
+                            style = style,
+                            width = wallpaperWidth,
+                            height = wallpaperHeight
+                        )
+                    }
                 )
             }
         }
@@ -243,23 +249,6 @@ fun HomeScreen() {
                 text = error,
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodyMedium
-            )
-        }
-
-        Spacer(Modifier.height(20.dp))
-
-        Button(
-            modifier = Modifier.fillMaxWidth(),
-            enabled = track != null && !state.isGenerating,
-            onClick = {
-                viewModel.generateWallpaper(
-                    width = wallpaperWidth,
-                    height = wallpaperHeight
-                )
-            }
-        ) {
-            Text(
-                if (state.isGenerating) "Generating..." else "Generate Wallpaper"
             )
         }
 
