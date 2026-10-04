@@ -67,11 +67,20 @@ fun HomeScreen() {
     val state by viewModel.uiState.collectAsState()
     val track = state.track
     var showSettings by remember { mutableStateOf(false) }
+    var showFullPreview by remember { mutableStateOf(false) }
 
     val metrics = context.resources.displayMetrics
     val wallpaperWidth = metrics.widthPixels.coerceAtLeast(1)
     val wallpaperHeight = metrics.heightPixels.coerceAtLeast(1)
     val accent = if (androidx.compose.foundation.isSystemInDarkTheme()) RetroOrangeDark else RetroOrange
+
+    if (showFullPreview && state.generatedWallpaper != null) {
+        WallpaperPreviewScreen(
+            bitmap = state.generatedWallpaper!!,
+            onBack = { showFullPreview = false }
+        )
+        return
+    }
 
     Column(
         modifier = Modifier
@@ -85,16 +94,8 @@ fun HomeScreen() {
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Column {
-                Text(
-                    "VALLPAPER",
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                Text(
-                    "VINYL / VISUALS",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = accent
-                )
+                Text("VALLPAPER", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onBackground)
+                Text("VINYL / VISUALS", style = MaterialTheme.typography.labelSmall, color = accent)
             }
             IconButton(onClick = { showSettings = true }) {
                 Icon(Icons.Default.Settings, contentDescription = "Settings", tint = accent)
@@ -123,10 +124,7 @@ fun HomeScreen() {
             RetroPanel(accent) {
                 Column(Modifier.padding(14.dp)) {
                     Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                        AlbumArtwork(
-                            imageUrl = track.artworkUrl,
-                            modifier = Modifier.fillMaxWidth().widthIn(max = 340.dp)
-                        )
+                        AlbumArtwork(imageUrl = track.artworkUrl, modifier = Modifier.fillMaxWidth().widthIn(max = 340.dp))
                     }
                     Spacer(Modifier.height(14.dp))
                     Text(track.title, style = MaterialTheme.typography.headlineSmall)
@@ -147,9 +145,7 @@ fun HomeScreen() {
                     style = style,
                     selected = state.selectedStyle == style,
                     accent = accent,
-                    onClick = {
-                        viewModel.selectStyleAndGenerate(style, wallpaperWidth, wallpaperHeight)
-                    }
+                    onClick = { viewModel.selectStyleAndGenerate(style, wallpaperWidth, wallpaperHeight) }
                 )
             }
         }
@@ -168,18 +164,22 @@ fun HomeScreen() {
             }
             state.generatedWallpaper != null -> {
                 Card(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showFullPreview = true },
                     shape = RoundedCornerShape(3.dp),
                     border = BorderStroke(1.dp, accent),
                     colors = CardDefaults.cardColors(containerColor = Color.Transparent)
                 ) {
                     Image(
                         bitmap = state.generatedWallpaper!!.asImageBitmap(),
-                        contentDescription = "Generated wallpaper",
+                        contentDescription = "Generated wallpaper. Tap to preview full screen.",
                         modifier = Modifier.fillMaxWidth(),
                         contentScale = ContentScale.FillWidth
                     )
                 }
+                Spacer(Modifier.height(8.dp))
+                Text("TAP PREVIEW TO OPEN FULL SCREEN", color = accent, style = MaterialTheme.typography.labelSmall)
             }
             else -> {
                 RetroPanel(accent, Modifier.fillMaxWidth().aspectRatio(9f / 16f)) {
@@ -205,16 +205,9 @@ fun HomeScreen() {
                 Column(Modifier.weight(1f)) {
                     Text("AUTO WALLPAPER", style = MaterialTheme.typography.titleMedium)
                     Spacer(Modifier.height(2.dp))
-                    Text(
-                        if (state.automaticWallpaper) "UPDATES WITH MUSIC" else "MANUAL MODE",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = accent
-                    )
+                    Text(if (state.automaticWallpaper) "UPDATES WITH MUSIC" else "MANUAL MODE", style = MaterialTheme.typography.bodySmall, color = accent)
                 }
-                Switch(
-                    checked = state.automaticWallpaper,
-                    onCheckedChange = { viewModel.toggleAutomaticWallpaper() }
-                )
+                Switch(checked = state.automaticWallpaper, onCheckedChange = { viewModel.toggleAutomaticWallpaper() })
             }
         }
 
@@ -241,11 +234,7 @@ private fun RetroSectionLabel(text: String, accent: Color) {
 }
 
 @Composable
-private fun RetroPanel(
-    accent: Color,
-    modifier: Modifier = Modifier,
-    content: @Composable () -> Unit
-) {
+private fun RetroPanel(accent: Color, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(3.dp),
@@ -257,12 +246,7 @@ private fun RetroPanel(
 }
 
 @Composable
-private fun RetroStyleCard(
-    style: WallpaperStyle,
-    selected: Boolean,
-    accent: Color,
-    onClick: () -> Unit
-) {
+private fun RetroStyleCard(style: WallpaperStyle, selected: Boolean, accent: Color, onClick: () -> Unit) {
     val background = if (selected) accent else MaterialTheme.colorScheme.surface
     val foreground = if (selected) Color.Black else MaterialTheme.colorScheme.onSurface
 
@@ -272,53 +256,30 @@ private fun RetroStyleCard(
         border = BorderStroke(1.dp, if (selected) accent else accent.copy(alpha = 0.45f)),
         colors = CardDefaults.cardColors(containerColor = background)
     ) {
-        Column(
-            modifier = Modifier.fillMaxSize().padding(12.dp),
-            verticalArrangement = Arrangement.Center
-        ) {
+        Column(Modifier.fillMaxSize().padding(12.dp), verticalArrangement = Arrangement.Center) {
             Text(style.displayName.uppercase(), style = MaterialTheme.typography.titleSmall, color = foreground)
             Spacer(Modifier.height(3.dp))
-            Text(
-                if (selected) "ACTIVE" else "SELECT",
-                style = MaterialTheme.typography.labelSmall,
-                color = if (selected) Color.Black.copy(alpha = 0.70f) else accent
-            )
+            Text(if (selected) "ACTIVE" else "SELECT", style = MaterialTheme.typography.labelSmall, color = if (selected) Color.Black.copy(alpha = 0.70f) else accent)
         }
     }
 }
 
 @Composable
-private fun SettingsOverlay(
-    state: HomeUiState,
-    accent: Color,
-    onDismiss: () -> Unit,
-    onAutomaticWallpaperChanged: () -> Unit
-) {
+private fun SettingsOverlay(state: HomeUiState, accent: Color, onDismiss: () -> Unit, onAutomaticWallpaperChanged: () -> Unit) {
     Dialog(onDismissRequest = onDismiss) {
         RetroPanel(accent) {
             Column(Modifier.padding(22.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Text("SETTINGS", style = MaterialTheme.typography.headlineSmall)
                     Text("DONE", modifier = Modifier.clickable { onDismiss() }, color = accent)
                 }
                 Spacer(Modifier.height(24.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
                         Text("AUTO WALLPAPER", style = MaterialTheme.typography.titleMedium)
                         Text("Automatically update when music changes.", style = MaterialTheme.typography.bodySmall)
                     }
-                    Switch(
-                        checked = state.automaticWallpaper,
-                        onCheckedChange = { onAutomaticWallpaperChanged() }
-                    )
+                    Switch(checked = state.automaticWallpaper, onCheckedChange = { onAutomaticWallpaperChanged() })
                 }
             }
         }
