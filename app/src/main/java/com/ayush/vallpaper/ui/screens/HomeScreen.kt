@@ -1,5 +1,7 @@
 package com.ayush.vallpaper.ui.screens
 
+import android.content.Intent
+import android.provider.Settings
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -28,25 +30,18 @@ import com.ayush.vallpaper.viewmodel.HomeViewModel
 fun HomeScreen(
     onPreview: () -> Unit
 ) {
+    val context = LocalContext.current
 
     val application =
-        LocalContext.current.applicationContext
-            as VallpaperApplication
+        context.applicationContext as VallpaperApplication
 
     val viewModel: HomeViewModel =
         viewModel(
-            factory =
-                AppViewModelFactory(application)
+            factory = AppViewModelFactory(application)
         )
 
-    val state by
-        viewModel.uiState.collectAsState()
-
+    val state by viewModel.uiState.collectAsState()
     val track = state.track
-
-    if (track == null) {
-        return
-    }
 
     Column(
         modifier = Modifier
@@ -54,39 +49,71 @@ fun HomeScreen(
             .padding(24.dp),
         verticalArrangement = Arrangement.Center
     ) {
-
         Text(
             text = "Vallpaper",
             style = MaterialTheme.typography.headlineMedium
         )
 
         Spacer(
-            modifier = Modifier.height(32.dp)
-        )
-
-        AlbumArtwork(
-            imageUrl = track.artworkUrl,
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(
             modifier = Modifier.height(24.dp)
         )
 
-        Text(
-            text = track.title,
-            style = MaterialTheme.typography.headlineSmall
-        )
+        if (track == null) {
+            Text(
+                text = "No music detected",
+                style = MaterialTheme.typography.headlineSmall
+            )
 
-        Text(
-            text = track.artist,
-            style = MaterialTheme.typography.bodyLarge
-        )
+            Spacer(
+                modifier = Modifier.height(8.dp)
+            )
 
-        Text(
-            text = track.album,
-            style = MaterialTheme.typography.bodyMedium
-        )
+            Text(
+                text = "Allow Vallpaper to access active media sessions so it can detect the song currently playing on your device.",
+                style = MaterialTheme.typography.bodyMedium
+            )
+
+            Spacer(
+                modifier = Modifier.height(20.dp)
+            )
+
+            Button(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = {
+                    context.startActivity(
+                        Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+                    )
+                }
+            ) {
+                Text("Allow Music Access")
+            }
+        } else {
+            if (track.artworkUrl.isNotBlank()) {
+                AlbumArtwork(
+                    imageUrl = track.artworkUrl,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(
+                    modifier = Modifier.height(24.dp)
+                )
+            }
+
+            Text(
+                text = track.title,
+                style = MaterialTheme.typography.headlineSmall
+            )
+
+            Text(
+                text = track.artist,
+                style = MaterialTheme.typography.bodyLarge
+            )
+
+            Text(
+                text = track.album,
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
 
         Spacer(
             modifier = Modifier.height(24.dp)
@@ -96,9 +123,7 @@ fun HomeScreen(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-
             Column {
-
                 Text(
                     text = "Automatic Wallpaper"
                 )
@@ -126,8 +151,7 @@ fun HomeScreen(
         )
 
         Text(
-            text =
-                "Style: ${state.selectedStyle.displayName}",
+            text = "Style: ${state.selectedStyle.displayName}",
             style = MaterialTheme.typography.bodyMedium
         )
 
@@ -137,11 +161,10 @@ fun HomeScreen(
 
         Button(
             modifier = Modifier.fillMaxWidth(),
-            onClick = onPreview
+            onClick = onPreview,
+            enabled = track != null
         ) {
-            Text(
-                text = "Preview Wallpaper"
-            )
+            Text("Preview Wallpaper")
         }
     }
 }
