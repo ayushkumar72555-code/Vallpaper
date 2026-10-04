@@ -6,7 +6,6 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -43,9 +42,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
@@ -60,75 +56,8 @@ import com.ayush.vallpaper.viewmodel.AppViewModelFactory
 import com.ayush.vallpaper.viewmodel.HomeUiState
 import com.ayush.vallpaper.viewmodel.HomeViewModel
 
-private val FrostBlue = Color(0xFFBFE8FF)
-
-@Composable
-private fun FrostedCard(
-    modifier: Modifier = Modifier,
-    content: @Composable () -> Unit
-) {
-    val isDark = isSystemInDarkTheme()
-    val shape = RoundedCornerShape(20.dp)
-
-    val surfaceColor = if (isDark) {
-        Color.White.copy(alpha = 0.045f)
-    } else {
-        Color.White.copy(alpha = 0.62f)
-    }
-
-    val borderColor = if (isDark) {
-        FrostBlue.copy(alpha = 0.20f)
-    } else {
-        FrostBlue.copy(alpha = 0.48f)
-    }
-
-    Box(
-        modifier = modifier.shadow(
-            elevation = if (isDark) 0.dp else 5.dp,
-            shape = shape,
-            clip = false
-        )
-    ) {
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                .clip(shape)
-        ) {
-            Box(
-                modifier = Modifier
-                    .width(130.dp)
-                    .height(130.dp)
-                    .blur(34.dp)
-                    .align(Alignment.TopStart)
-                    .background(FrostBlue.copy(alpha = if (isDark) 0.13f else 0.20f))
-            )
-
-            Box(
-                modifier = Modifier
-                    .width(100.dp)
-                    .height(100.dp)
-                    .blur(30.dp)
-                    .align(Alignment.BottomEnd)
-                    .background(FrostBlue.copy(alpha = if (isDark) 0.07f else 0.14f))
-            )
-
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .background(surfaceColor)
-            )
-        }
-
-        Card(
-            modifier = Modifier.fillMaxSize(),
-            shape = shape,
-            border = BorderStroke(1.dp, borderColor),
-            colors = CardDefaults.cardColors(containerColor = Color.Transparent)
-        ) {
-            content()
-        }
-    }
-}
+private val RetroOrange = Color(0xFFFF7A00)
+private val RetroOrangeDark = Color(0xFFFF8A00)
 
 @Composable
 fun HomeScreen() {
@@ -139,114 +68,110 @@ fun HomeScreen() {
     val track = state.track
     var showSettings by remember { mutableStateOf(false) }
 
-    val displayMetrics = context.resources.displayMetrics
-    val wallpaperWidth = displayMetrics.widthPixels.coerceAtLeast(1)
-    val wallpaperHeight = displayMetrics.heightPixels.coerceAtLeast(1)
+    val metrics = context.resources.displayMetrics
+    val wallpaperWidth = metrics.widthPixels.coerceAtLeast(1)
+    val wallpaperHeight = metrics.heightPixels.coerceAtLeast(1)
+    val accent = if (androidx.compose.foundation.isSystemInDarkTheme()) RetroOrangeDark else RetroOrange
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(20.dp)
+            .padding(horizontal = 20.dp, vertical = 18.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text("Vallpaper", style = MaterialTheme.typography.headlineMedium)
-
-            FrostedCard(modifier = Modifier.height(48.dp).width(48.dp)) {
-                IconButton(onClick = { showSettings = true }) {
-                    Icon(Icons.Default.Settings, contentDescription = "Settings")
-                }
+            Column {
+                Text(
+                    "VALLPAPER",
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+                Text(
+                    "VINYL / VISUALS",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = accent
+                )
+            }
+            IconButton(onClick = { showSettings = true }) {
+                Icon(Icons.Default.Settings, contentDescription = "Settings", tint = accent)
             }
         }
 
-        Spacer(Modifier.height(24.dp))
-        Text("NOW PLAYING", style = MaterialTheme.typography.labelLarge)
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(28.dp))
+        RetroSectionLabel("NOW PLAYING", accent)
+        Spacer(Modifier.height(10.dp))
 
         if (track == null) {
-            FrostedCard(Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(20.dp)) {
-                    Text("No music detected", style = MaterialTheme.typography.headlineSmall)
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        "Allow Vallpaper to access active media sessions so it can detect the song currently playing on your device.",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                    Spacer(Modifier.height(16.dp))
-                    Button(
-                        modifier = Modifier.fillMaxWidth(),
-                        onClick = {
-                            context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
-                        }
-                    ) {
-                        Text("Allow Music Access")
+            RetroPanel(accent) {
+                Column(Modifier.padding(18.dp)) {
+                    Text("NO MUSIC DETECTED", style = MaterialTheme.typography.titleMedium)
+                    Spacer(Modifier.height(6.dp))
+                    Text("Allow Vallpaper to access active media sessions.", style = MaterialTheme.typography.bodyMedium)
+                    Spacer(Modifier.height(14.dp))
+                    Button(onClick = {
+                        context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                    }) {
+                        Text("ALLOW MUSIC ACCESS")
                     }
                 }
             }
         } else {
-            FrostedCard(Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(16.dp)) {
+            RetroPanel(accent) {
+                Column(Modifier.padding(14.dp)) {
                     Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                         AlbumArtwork(
                             imageUrl = track.artworkUrl,
                             modifier = Modifier.fillMaxWidth().widthIn(max = 340.dp)
                         )
                     }
-                    Spacer(Modifier.height(16.dp))
+                    Spacer(Modifier.height(14.dp))
                     Text(track.title, style = MaterialTheme.typography.headlineSmall)
-                    Spacer(Modifier.height(4.dp))
-                    Text(track.artist, style = MaterialTheme.typography.bodyLarge)
+                    Spacer(Modifier.height(3.dp))
+                    Text(track.artist, style = MaterialTheme.typography.bodyLarge, color = accent)
                     Text(track.album, style = MaterialTheme.typography.bodyMedium)
                 }
             }
         }
 
-        Spacer(Modifier.height(32.dp))
-        Text("WALLPAPER STYLE", style = MaterialTheme.typography.labelLarge)
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(28.dp))
+        RetroSectionLabel("STYLE", accent)
+        Spacer(Modifier.height(10.dp))
 
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             items(WallpaperStyle.entries) { style ->
-                StyleCard(
+                RetroStyleCard(
                     style = style,
                     selected = state.selectedStyle == style,
+                    accent = accent,
                     onClick = {
-                        viewModel.selectStyleAndGenerate(
-                            style = style,
-                            width = wallpaperWidth,
-                            height = wallpaperHeight
-                        )
+                        viewModel.selectStyleAndGenerate(style, wallpaperWidth, wallpaperHeight)
                     }
                 )
             }
         }
 
-        Spacer(Modifier.height(32.dp))
-        Text("PREVIEW", style = MaterialTheme.typography.labelLarge)
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(28.dp))
+        RetroSectionLabel("PREVIEW", accent)
+        Spacer(Modifier.height(10.dp))
 
         when {
             state.isGenerating -> {
-                FrostedCard(
-                    modifier = Modifier.fillMaxWidth().aspectRatio(9f / 16f)
-                ) {
+                RetroPanel(accent, Modifier.fillMaxWidth().aspectRatio(9f / 16f)) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
+                        CircularProgressIndicator(color = accent)
                     }
                 }
             }
             state.generatedWallpaper != null -> {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(20.dp),
-                    border = BorderStroke(
-                        1.dp,
-                        FrostBlue.copy(alpha = if (isSystemInDarkTheme()) 0.20f else 0.48f)
-                    )
+                    shape = RoundedCornerShape(3.dp),
+                    border = BorderStroke(1.dp, accent),
+                    colors = CardDefaults.cardColors(containerColor = Color.Transparent)
                 ) {
                     Image(
                         bitmap = state.generatedWallpaper!!.asImageBitmap(),
@@ -257,14 +182,9 @@ fun HomeScreen() {
                 }
             }
             else -> {
-                FrostedCard(
-                    modifier = Modifier.fillMaxWidth().aspectRatio(9f / 16f)
-                ) {
+                RetroPanel(accent, Modifier.fillMaxWidth().aspectRatio(9f / 16f)) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(
-                            "Your wallpaper preview will appear here",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
+                        Text("SELECT A STYLE", color = accent, style = MaterialTheme.typography.labelLarge)
                     }
                 }
             }
@@ -272,22 +192,23 @@ fun HomeScreen() {
 
         state.generationError?.let { error ->
             Spacer(Modifier.height(8.dp))
-            Text(error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
+            Text(error, color = MaterialTheme.colorScheme.error)
         }
 
-        Spacer(Modifier.height(32.dp))
-        FrostedCard(Modifier.fillMaxWidth()) {
+        Spacer(Modifier.height(26.dp))
+        RetroPanel(accent) {
             Row(
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                modifier = Modifier.fillMaxWidth().padding(15.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column(Modifier.weight(1f)) {
-                    Text("Automatic Wallpaper", style = MaterialTheme.typography.titleMedium)
+                    Text("AUTO WALLPAPER", style = MaterialTheme.typography.titleMedium)
                     Spacer(Modifier.height(2.dp))
                     Text(
-                        if (state.automaticWallpaper) "Automatically update wallpaper" else "Manual wallpaper generation",
-                        style = MaterialTheme.typography.bodySmall
+                        if (state.automaticWallpaper) "UPDATES WITH MUSIC" else "MANUAL MODE",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = accent
                     )
                 }
                 Switch(
@@ -297,12 +218,13 @@ fun HomeScreen() {
             }
         }
 
-        Spacer(Modifier.height(32.dp))
+        Spacer(Modifier.height(24.dp))
     }
 
     if (showSettings) {
         SettingsOverlay(
             state = state,
+            accent = accent,
             onDismiss = { showSettings = false },
             onAutomaticWallpaperChanged = { viewModel.toggleAutomaticWallpaper() }
         )
@@ -310,64 +232,57 @@ fun HomeScreen() {
 }
 
 @Composable
-private fun StyleCard(
+private fun RetroSectionLabel(text: String, accent: Color) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.width(4.dp).height(16.dp).background(accent))
+        Spacer(Modifier.width(8.dp))
+        Text(text, style = MaterialTheme.typography.labelLarge, color = accent)
+    }
+}
+
+@Composable
+private fun RetroPanel(
+    accent: Color,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
+) {
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(3.dp),
+        border = BorderStroke(1.dp, accent.copy(alpha = 0.60f)),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        content()
+    }
+}
+
+@Composable
+private fun RetroStyleCard(
     style: WallpaperStyle,
     selected: Boolean,
+    accent: Color,
     onClick: () -> Unit
 ) {
-    val isDark = isSystemInDarkTheme()
-    val glassColor = if (selected) {
-        MaterialTheme.colorScheme.primary.copy(alpha = if (isDark) 0.20f else 0.14f)
-    } else if (isDark) {
-        Color.White.copy(alpha = 0.045f)
-    } else {
-        Color.White.copy(alpha = 0.62f)
-    }
-    val borderColor = if (selected) {
-        MaterialTheme.colorScheme.primary.copy(alpha = 0.80f)
-    } else {
-        FrostBlue.copy(alpha = if (isDark) 0.20f else 0.48f)
-    }
+    val background = if (selected) accent else MaterialTheme.colorScheme.surface
+    val foreground = if (selected) Color.Black else MaterialTheme.colorScheme.onSurface
 
-    Box(
-        modifier = Modifier
-            .width(150.dp)
-            .height(100.dp)
-            .clickable(onClick = onClick)
+    Card(
+        modifier = Modifier.width(132.dp).height(78.dp).clickable(onClick = onClick),
+        shape = RoundedCornerShape(3.dp),
+        border = BorderStroke(1.dp, if (selected) accent else accent.copy(alpha = 0.45f)),
+        colors = CardDefaults.cardColors(containerColor = background)
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .clip(RoundedCornerShape(18.dp))
+        Column(
+            modifier = Modifier.fillMaxSize().padding(12.dp),
+            verticalArrangement = Arrangement.Center
         ) {
-            Box(
-                modifier = Modifier
-                    .width(100.dp)
-                    .height(100.dp)
-                    .blur(30.dp)
-                    .background(FrostBlue.copy(alpha = if (isDark) 0.10f else 0.17f))
+            Text(style.displayName.uppercase(), style = MaterialTheme.typography.titleSmall, color = foreground)
+            Spacer(Modifier.height(3.dp))
+            Text(
+                if (selected) "ACTIVE" else "SELECT",
+                style = MaterialTheme.typography.labelSmall,
+                color = if (selected) Color.Black.copy(alpha = 0.70f) else accent
             )
-            Box(
-                modifier = Modifier.fillMaxSize().background(glassColor)
-            )
-        }
-
-        Card(
-            modifier = Modifier.fillMaxSize(),
-            border = BorderStroke(if (selected) 2.dp else 1.dp, borderColor),
-            shape = RoundedCornerShape(18.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.Transparent)
-        ) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(style.displayName, style = MaterialTheme.typography.titleMedium)
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        if (selected) "Selected" else "Tap to select",
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-            }
         }
     }
 }
@@ -375,23 +290,20 @@ private fun StyleCard(
 @Composable
 private fun SettingsOverlay(
     state: HomeUiState,
+    accent: Color,
     onDismiss: () -> Unit,
     onAutomaticWallpaperChanged: () -> Unit
 ) {
     Dialog(onDismissRequest = onDismiss) {
-        FrostedCard(Modifier.fillMaxWidth()) {
-            Column(Modifier.padding(24.dp)) {
+        RetroPanel(accent) {
+            Column(Modifier.padding(22.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Settings", style = MaterialTheme.typography.headlineSmall)
-                    Text(
-                        "Done",
-                        modifier = Modifier.clickable { onDismiss() },
-                        color = MaterialTheme.colorScheme.primary
-                    )
+                    Text("SETTINGS", style = MaterialTheme.typography.headlineSmall)
+                    Text("DONE", modifier = Modifier.clickable { onDismiss() }, color = accent)
                 }
                 Spacer(Modifier.height(24.dp))
                 Row(
@@ -400,11 +312,8 @@ private fun SettingsOverlay(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(Modifier.weight(1f)) {
-                        Text("Automatic Wallpaper", style = MaterialTheme.typography.titleMedium)
-                        Text(
-                            "Automatically update the wallpaper when music changes.",
-                            style = MaterialTheme.typography.bodySmall
-                        )
+                        Text("AUTO WALLPAPER", style = MaterialTheme.typography.titleMedium)
+                        Text("Automatically update when music changes.", style = MaterialTheme.typography.bodySmall)
                     }
                     Switch(
                         checked = state.automaticWallpaper,
