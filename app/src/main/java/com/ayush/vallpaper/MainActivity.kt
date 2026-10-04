@@ -8,6 +8,9 @@ import com.ayush.vallpaper.ui.theme.VallpaperTheme
 
 class MainActivity : ComponentActivity() {
 
+    private val vallpaperApplication: VallpaperApplication
+        get() = application as VallpaperApplication
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -16,5 +19,10 @@ class MainActivity : ComponentActivity() {
                 VallpaperApp()
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        vallpaperApplication.trackRepository.start()
     }
 }
