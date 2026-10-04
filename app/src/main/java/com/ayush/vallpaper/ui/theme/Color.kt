@@ -6,20 +6,22 @@ import androidx.compose.ui.graphics.Color
 val VallpaperOrange = Color(0xFFFF7A00)
 val VallpaperOrangeDark = Color(0xFFFF8A00)
 
-// Dark theme: black + orange
+// AMOLED dark theme: true black throughout the app.
+// This is intentionally #000000 rather than dark gray so OLED/AMOLED
+// pixels can turn completely off for black areas.
 val VallpaperDarkBackground = Color(0xFF000000)
-val VallpaperDarkSurface = Color(0xFF101010)
-val VallpaperDarkSurfaceVariant = Color(0xFF1C1C1C)
+val VallpaperDarkSurface = Color(0xFF000000)
+val VallpaperDarkSurfaceVariant = Color(0xFF000000)
 
 val VallpaperDarkPrimary = VallpaperOrangeDark
 val VallpaperDarkOnPrimary = Color(0xFF000000)
-val VallpaperDarkPrimaryContainer = Color(0xFF4A2500)
-val VallpaperDarkOnPrimaryContainer = Color(0xFFFFDCC2)
-val VallpaperDarkSecondary = Color(0xFFFFB36B)
-val VallpaperDarkOnSecondary = Color(0xFF261300)
-val VallpaperDarkOnBackground = Color(0xFFF5F5F5)
-val VallpaperDarkOnSurface = Color(0xFFF5F5F5)
-val VallpaperDarkOnSurfaceVariant = Color(0xFFD0D0D0)
+val VallpaperDarkPrimaryContainer = Color(0xFF000000)
+val VallpaperDarkOnPrimaryContainer = Color(0xFFFFB870)
+val VallpaperDarkSecondary = Color(0xFFFFA24A)
+val VallpaperDarkOnSecondary = Color(0xFF000000)
+val VallpaperDarkOnBackground = Color(0xFFFFFFFF)
+val VallpaperDarkOnSurface = Color(0xFFFFFFFF)
+val VallpaperDarkOnSurfaceVariant = Color(0xFFE0E0E0)
 
 // Light theme: white + orange
 val VallpaperLightBackground = Color(0xFFFFFFFF)
