@@ -4,8 +4,8 @@ import android.content.Intent
 import android.provider.Settings
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -42,58 +42,96 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ayush.vallpaper.VallpaperApplication
 import com.ayush.vallpaper.domain.model.WallpaperStyle
 import com.ayush.vallpaper.ui.components.AlbumArtwork
 import com.ayush.vallpaper.viewmodel.AppViewModelFactory
 import com.ayush.vallpaper.viewmodel.HomeUiState
 import com.ayush.vallpaper.viewmodel.HomeViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 
-private val GlassBlueLight = Color(0xFFDDF3FF)
-private val GlassBlueDark = Color(0xFFBFE7FF)
+private val FrostBlue = Color(0xFFBFE8FF)
 
 @Composable
-private fun GlassCard(
+private fun FrostedCard(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
-    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+    val isDark = isSystemInDarkTheme()
+    val shape = RoundedCornerShape(20.dp)
 
-    val glassColor = if (isDark) {
-        GlassBlueDark.copy(alpha = 0.08f)
+    val surfaceColor = if (isDark) {
+        Color.White.copy(alpha = 0.045f)
     } else {
-        GlassBlueLight.copy(alpha = 0.68f)
+        Color.White.copy(alpha = 0.62f)
     }
 
     val borderColor = if (isDark) {
-        GlassBlueDark.copy(alpha = 0.22f)
+        FrostBlue.copy(alpha = 0.20f)
     } else {
-        Color.White.copy(alpha = 0.85f)
+        FrostBlue.copy(alpha = 0.48f)
     }
 
-    Card(
-        modifier = modifier.shadow(
-            elevation = if (isDark) 0.dp else 6.dp,
-            shape = RoundedCornerShape(20.dp),
-            clip = false
-        ),
-        shape = RoundedCornerShape(20.dp),
-        border = BorderStroke(1.dp, borderColor),
-        colors = CardDefaults.cardColors(
-            containerColor = glassColor
-        )
+    Box(
+        modifier = modifier
+            .shadow(
+                elevation = if (isDark) 0.dp else 5.dp,
+                shape = shape,
+                clip = false
+            )
     ) {
-        content()
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .clip(shape)
+        ) {
+            Box(
+                modifier = Modifier
+                    .width(130.dp)
+                    .height(130.dp)
+                    .blur(34.dp)
+                    .align(Alignment.TopStart)
+                    .background(
+                        FrostBlue.copy(alpha = if (isDark) 0.13f else 0.20f)
+                    )
+            )
+
+            Box(
+                modifier = Modifier
+                    .width(100.dp)
+                    .height(100.dp)
+                    .blur(30.dp)
+                    .align(Alignment.BottomEnd)
+                    .background(
+                        FrostBlue.copy(alpha = if (isDark) 0.07f else 0.14f)
+                    )
+            )
+
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(surfaceColor)
+            )
+        }
+
+        Card(
+            modifier = Modifier.fillMaxSize(),
+            shape = shape,
+            border = BorderStroke(1.dp, borderColor),
+            colors = CardDefaults.cardColors(
+                containerColor = Color.Transparent
+            )
+        ) {
+            content()
+        }
     }
 }
 
@@ -130,9 +168,7 @@ fun HomeScreen() {
                 style = MaterialTheme.typography.headlineMedium
             )
 
-            GlassCard(
-                modifier = Modifier.size(48.dp)
-            ) {
+            FrostedCard(modifier = Modifier.height(48.dp).width(48.dp)) {
                 IconButton(onClick = { showSettings = true }) {
                     Icon(
                         imageVector = Icons.Default.Settings,
@@ -151,7 +187,7 @@ fun HomeScreen() {
         Spacer(Modifier.height(12.dp))
 
         if (track == null) {
-            GlassCard(Modifier.fillMaxWidth()) {
+            FrostedCard(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(20.dp)) {
                     Text(
                         text = "No music detected",
@@ -176,7 +212,7 @@ fun HomeScreen() {
                 }
             }
         } else {
-            GlassCard(Modifier.fillMaxWidth()) {
+            FrostedCard(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp)) {
                     Box(
                         modifier = Modifier.fillMaxWidth(),
@@ -216,9 +252,7 @@ fun HomeScreen() {
         )
         Spacer(Modifier.height(12.dp))
 
-        LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             items(WallpaperStyle.entries) { style ->
                 StyleCard(
                     style = style,
@@ -244,7 +278,7 @@ fun HomeScreen() {
 
         when {
             state.isGenerating -> {
-                GlassCard(
+                FrostedCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .aspectRatio(9f / 16f)
@@ -264,10 +298,10 @@ fun HomeScreen() {
                     shape = RoundedCornerShape(20.dp),
                     border = BorderStroke(
                         1.dp,
-                        if (androidx.compose.foundation.isSystemInDarkTheme()) {
-                            GlassBlueDark.copy(alpha = 0.22f)
+                        if (isSystemInDarkTheme()) {
+                            FrostBlue.copy(alpha = 0.20f)
                         } else {
-                            Color.White.copy(alpha = 0.85f)
+                            FrostBlue.copy(alpha = 0.48f)
                         }
                     )
                 ) {
@@ -281,7 +315,7 @@ fun HomeScreen() {
             }
 
             else -> {
-                GlassCard(
+                FrostedCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .aspectRatio(9f / 16f)
@@ -310,7 +344,7 @@ fun HomeScreen() {
 
         Spacer(Modifier.height(32.dp))
 
-        GlassCard(Modifier.fillMaxWidth()) {
+        FrostedCard(Modifier.fillMaxWidth()) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -361,52 +395,71 @@ private fun StyleCard(
     selected: Boolean,
     onClick: () -> Unit
 ) {
-    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+    val isDark = isSystemInDarkTheme()
 
     val glassColor = if (selected) {
-        MaterialTheme.colorScheme.primary.copy(alpha = if (isDark) 0.22f else 0.14f)
+        MaterialTheme.colorScheme.primary.copy(alpha = if (isDark) 0.20f else 0.14f)
     } else if (isDark) {
-        GlassBlueDark.copy(alpha = 0.08f)
+        Color.White.copy(alpha = 0.045f)
     } else {
-        GlassBlueLight.copy(alpha = 0.68f)
+        Color.White.copy(alpha = 0.62f)
     }
 
     val borderColor = if (selected) {
-        MaterialTheme.colorScheme.primary.copy(alpha = 0.75f)
-    } else if (isDark) {
-        GlassBlueDark.copy(alpha = 0.22f)
+        MaterialTheme.colorScheme.primary.copy(alpha = 0.80f)
     } else {
-        Color.White.copy(alpha = 0.85f)
+        FrostBlue.copy(alpha = if (isDark) 0.20f else 0.48f)
     }
 
-    Card(
+    Box(
         modifier = Modifier
             .width(150.dp)
             .height(100.dp)
-            .clickable(onClick = onClick),
-        border = BorderStroke(
-            if (selected) 2.dp else 1.dp,
-            borderColor
-        ),
-        shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = glassColor
-        )
+            .clickable(onClick = onClick)
     ) {
         Box(
-            Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
+            modifier = Modifier
+                .fillMaxSize()
+                .clip(RoundedCornerShape(18.dp))
         ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = style.displayName,
-                    style = MaterialTheme.typography.titleMedium
-                )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text = if (selected) "Selected" else "Tap to select",
-                    style = MaterialTheme.typography.bodySmall
-                )
+            Box(
+                modifier = Modifier
+                    .width(100.dp)
+                    .height(100.dp)
+                    .blur(30.dp)
+                    .background(FrostBlue.copy(alpha = if (isDark) 0.10f else 0.17f))
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(glassColor)
+            )
+        }
+
+        Card(
+            modifier = Modifier.fillMaxSize(),
+            border = BorderStroke(
+                if (selected) 2.dp else 1.dp,
+                borderColor
+            ),
+            shape = RoundedCornerShape(18.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.Transparent)
+        ) {
+            Box(
+                Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = style.displayName,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = if (selected) "Selected" else "Tap to select",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
             }
         }
     }
@@ -419,9 +472,7 @@ private fun SettingsOverlay(
     onAutomaticWallpaperChanged: () -> Unit
 ) {
     Dialog(onDismissRequest = onDismiss) {
-        GlassCard(
-            modifier = Modifier.fillMaxWidth()
-        ) {
+        FrostedCard(Modifier.fillMaxWidth()) {
             Column(Modifier.padding(24.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
