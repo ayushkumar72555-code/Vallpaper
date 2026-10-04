@@ -60,6 +60,7 @@ import com.ayush.vallpaper.viewmodel.AppViewModelFactory
 import com.ayush.vallpaper.viewmodel.HomeUiState
 import com.ayush.vallpaper.viewmodel.HomeViewModel
 import com.ayush.vallpaper.wallpaper.WallpaperApplier
+import com.ayush.vallpaper.wallpaper.WallpaperDimensions
 
 private val RetroOrange = Color(0xFFFF7A00)
 private val RetroOrangeDark = Color(0xFFFF8A00)
@@ -75,9 +76,7 @@ fun HomeScreen() {
     var showSettings by remember { mutableStateOf(false) }
     var showFullPreview by remember { mutableStateOf(false) }
 
-    val metrics = context.resources.displayMetrics
-    val wallpaperWidth = metrics.widthPixels.coerceAtLeast(1)
-    val wallpaperHeight = metrics.heightPixels.coerceAtLeast(1)
+    val (wallpaperWidth, wallpaperHeight) = WallpaperDimensions.get(context)
     val accent = if (isSystemInDarkTheme()) RetroOrangeDark else RetroOrange
 
     LaunchedEffect(wallpaperWidth, wallpaperHeight) {
@@ -188,7 +187,7 @@ fun HomeScreen() {
 
         when {
             state.isGenerating -> {
-                RetroPanel(accent, Modifier.fillMaxWidth().aspectRatio(9f / 16f)) {
+                RetroPanel(accent, Modifier.fillMaxWidth().aspectRatio(wallpaperWidth.toFloat() / wallpaperHeight.toFloat())) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator(color = accent)
                     }
@@ -214,7 +213,7 @@ fun HomeScreen() {
                 Text("TAP PREVIEW TO OPEN FULL SCREEN", color = accent, style = MaterialTheme.typography.labelSmall)
             }
             else -> {
-                RetroPanel(accent, Modifier.fillMaxWidth().aspectRatio(9f / 16f)) {
+                RetroPanel(accent, Modifier.fillMaxWidth().aspectRatio(wallpaperWidth.toFloat() / wallpaperHeight.toFloat())) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text("WAITING FOR MUSIC", color = accent, style = MaterialTheme.typography.labelLarge)
                     }
