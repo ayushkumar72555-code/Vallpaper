@@ -204,19 +204,29 @@ class MediaSessionTrackRepository(
         )
 
         for (key in artworkKeys) {
-            val uri = metadata.getString(key)
-            if (!uri.isNullOrBlank()) {
-                return uri
+            val uriString = metadata.getString(key)
+
+            if (!uriString.isNullOrBlank()) {
+                val normalizedUri =
+                    copyUriToCacheIfNeeded(Uri.parse(uriString))
+
+                if (normalizedUri.isNotBlank()) {
+                    return normalizedUri
+                }
             }
         }
 
-        metadata.description?.iconUri?.toString()?.let { uri ->
-            if (uri.isNotBlank()) {
-                return uri
+        metadata.description?.iconUri?.let { uri ->
+            val normalizedUri =
+                copyUriToCacheIfNeeded(uri)
+
+            if (normalizedUri.isNotBlank()) {
+                return normalizedUri
             }
         }
 
         val bitmap = findArtworkBitmap(metadata)
+
         if (bitmap != null) {
             return saveArtwork(bitmap, metadata)
         }
@@ -240,6 +250,70 @@ class MediaSessionTrackRepository(
         }
 
         return null
+    }
+
+    private fun copyUriToCacheIfNeeded(
+        uri: Uri
+    ): String {
+        return try {
+            when (uri.scheme?.lowercase()) {
+                "http", "https" -> uri.toString()
+
+                "file" -> {
+                    val file = File(uri.path ?: return "")
+                    if (file.exists() && file.length() > 0) {
+                        uri.toString()
+                    } else {
+                        ""
+                    }
+                }
+
+                "content" -> {
+                    copyContentUriToCache(uri)
+                }
+
+                else -> ""
+            }
+        } catch (_: Exception) {
+            ""
+        }
+    }
+
+    private fun copyContentUriToCache(
+        uri: Uri
+    ): String {
+        val artworkDirectory =
+            File(context.cacheDir, "media_artwork")
+
+        if (!artworkDirectory.exists()) {
+            artworkDirectory.mkdirs()
+        }
+
+        val safeName =
+            "uri_" + Integer.toHexString(uri.toString().hashCode())
+
+        val file = File(
+            artworkDirectory,
+            "$safeName.art"
+        )
+
+        return try {
+            context.contentResolver.openInputStream(uri)?.use { input ->
+                FileOutputStream(file).use { output ->
+                    input.copyTo(output)
+                }
+            } ?: return ""
+
+            if (file.length() <= 0) {
+                file.delete()
+                return ""
+            }
+
+            Uri.fromFile(file).toString()
+        } catch (_: Exception) {
+            file.delete()
+            ""
+        }
     }
 
     private fun saveArtwork(
@@ -274,6 +348,11 @@ class MediaSessionTrackRepository(
                     95,
                     output
                 )
+            }
+
+            if (file.length() <= 0) {
+                file.delete()
+                return ""
             }
 
             Uri.fromFile(file).toString()
