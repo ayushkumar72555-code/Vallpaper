@@ -3,6 +3,7 @@ package com.ayush.vallpaper.wallpaper
 import android.app.WallpaperManager
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.Rect
 import com.ayush.vallpaper.ui.screens.WallpaperTarget
 
 object WallpaperApplier {
@@ -21,9 +22,16 @@ object WallpaperApplier {
                 WallpaperTarget.BOTH -> WallpaperManager.FLAG_SYSTEM or WallpaperManager.FLAG_LOCK
             }
 
+            val fullImageRect = Rect(
+                0,
+                0,
+                bitmap.width,
+                bitmap.height
+            )
+
             wallpaperManager.setBitmap(
                 bitmap,
-                null,
+                fullImageRect,
                 true,
                 flags
             )
