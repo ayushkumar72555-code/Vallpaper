@@ -9,5 +9,7 @@
         <item name="android:windowLightNavigationBar">false</item>
         <item name="android:windowBackground">#000000</item>
         <item name="android:colorAccent">#FF8A00</item>
+        <item name="android:textColorPrimary">#FFFFFF</item>
+        <item name="android:textColorSecondary">#E0E0E0</item>
     </style>
 </resources>
