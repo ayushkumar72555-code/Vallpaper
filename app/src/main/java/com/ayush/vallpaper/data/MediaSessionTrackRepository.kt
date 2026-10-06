@@ -545,27 +545,71 @@ class MediaSessionTrackRepository(private val context: Context) : TrackRepositor
         }
     }
 
+    private fun pruneArtworkCache(directory: File) {
+        val files = directory.listFiles()
+            ?.filter { it.isFile && it.extension == "jpg" }
+            ?.sortedByDescending { it.lastModified() }
+            ?: return
+
+        files.drop(80).forEach { file ->
+            runCatching { file.delete() }
+        }
+    }
+
+    private fun sha256(value: String): String {
+        val digest = java.security.MessageDigest.getInstance("SHA-256")
+        return digest.digest(value.toByteArray(Charsets.UTF_8))
+            .joinToString("") { "%02x".format(it) }
+    }
+
     private fun saveArtwork(bitmap: Bitmap, metadata: MediaMetadata): String {
         return try {
             val artworkDirectory = File(context.cacheDir, "media_artwork")
             if (!artworkDirectory.exists() && !artworkDirectory.mkdirs()) return ""
 
+            val mediaId = metadata.getString(MediaMetadata.METADATA_KEY_MEDIA_ID).orEmpty()
             val title = metadata.getString(MediaMetadata.METADATA_KEY_TITLE).orEmpty()
-            val safeName = title
-                .ifBlank { "unknown" }
-                .replace(Regex("[^A-Za-z0-9._-]"), "_")
-                .take(80)
+            val artist = metadata.getString(MediaMetadata.METADATA_KEY_ARTIST).orEmpty()
+            val album = metadata.getString(MediaMetadata.METADATA_KEY_ALBUM).orEmpty()
 
-            val file = File(artworkDirectory, "${safeName}.jpg")
+            // Artwork identity must not depend on the title alone. Different
+            // tracks can share a title, and rapid track changes can otherwise
+            // cause an old cached image to be reused.
+            val identity = listOf(
+                title,
+                artist,
+                album,
+                mediaId
+            ).joinToString("\u001f")
 
-            FileOutputStream(file).use { output ->
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 95, output)
-            }
+            val fileName = "bitmap_" + sha256(identity) + ".jpg"
+            val file = File(artworkDirectory, fileName)
+            val tempFile = File(artworkDirectory, "$fileName.tmp")
 
-            if (file.length() <= 0) {
+            runCatching {
+                FileOutputStream(tempFile).use { output ->
+                    check(bitmap.compress(Bitmap.CompressFormat.JPEG, 95, output)) {
+                        "Bitmap compression failed"
+                    }
+                    output.fd.sync()
+                }
+
+                if (tempFile.length() <= 0L) {
+                    throw IllegalStateException("Temporary artwork file is empty")
+                }
+
+                if (!tempFile.renameTo(file)) {
+                    tempFile.delete()
+                    throw IllegalStateException("Could not atomically publish artwork")
+                }
+            }.getOrElse { exception ->
+                tempFile.delete()
                 file.delete()
+                Log.d(TAG, "Bitmap artwork could not be atomically saved", exception)
                 return ""
             }
+
+            pruneArtworkCache(artworkDirectory)
 
             Uri.fromFile(file).toString()
         } catch (exception: Exception) {
