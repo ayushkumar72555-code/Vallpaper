@@ -21,6 +21,13 @@ import kotlinx.coroutines.flow.asStateFlow
 import java.io.File
 import java.io.FileOutputStream
 
+data class PlaybackSnapshot(
+    val state: Int,
+    val positionMs: Long,
+    val playbackSpeed: Float,
+    val lastPositionUpdateTime: Long
+)
+
 class MediaSessionTrackRepository(private val context: Context) : TrackRepository {
     companion object { private const val TAG = "VallpaperMedia" }
 
