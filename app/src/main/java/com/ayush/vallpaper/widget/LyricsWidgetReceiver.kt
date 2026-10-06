@@ -221,26 +221,42 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
             views.setViewVisibility(R.id.lyrics_widget_title, titleVisibility)
             views.setViewVisibility(R.id.lyrics_widget_title_divider, titleVisibility)
 
-            intArrayOf(
-                R.id.lyrics_widget_current_sans,
-                R.id.lyrics_widget_current_serif,
-                R.id.lyrics_widget_current_mono,
-                R.id.lyrics_widget_current_a_sans,
-                R.id.lyrics_widget_current_a_serif,
-                R.id.lyrics_widget_current_a_mono,
-                R.id.lyrics_widget_current_b_sans,
-                R.id.lyrics_widget_current_b_serif,
-                R.id.lyrics_widget_current_b_mono
-            ).forEach { views.setTextColor(it, currentColor) }
+            if (settings.transition == LyricsWidgetSettings.TRANSITION_NONE) {
+                intArrayOf(
+                    R.id.lyrics_widget_current_sans,
+                    R.id.lyrics_widget_current_serif,
+                    R.id.lyrics_widget_current_mono
+                ).forEach { views.setTextColor(it, currentColor) }
 
-            intArrayOf(
-                R.id.lyrics_widget_next_sans,
-                R.id.lyrics_widget_next_serif,
-                R.id.lyrics_widget_next_mono,
-                R.id.lyrics_widget_next_a_sans,
-                R.id.lyrics_widget_next_a_serif,
-                R.id.lyrics_widget_next_a_mono
-            ).forEach { views.setTextColor(it, nextColor) }
+                intArrayOf(
+                    R.id.lyrics_widget_next_sans,
+                    R.id.lyrics_widget_next_serif,
+                    R.id.lyrics_widget_next_mono
+                ).forEach { views.setTextColor(it, nextColor) }
+            } else {
+                intArrayOf(
+                    R.id.lyrics_widget_current_a_sans,
+                    R.id.lyrics_widget_current_a_serif,
+                    R.id.lyrics_widget_current_a_mono,
+                    R.id.lyrics_widget_current_b_sans,
+                    R.id.lyrics_widget_current_b_serif,
+                    R.id.lyrics_widget_current_b_mono
+                ).forEach { views.setTextColor(it, currentColor) }
+
+                if (settings.transition == LyricsWidgetSettings.TRANSITION_SLIDE) {
+                    intArrayOf(
+                        R.id.lyrics_widget_next_a_sans,
+                        R.id.lyrics_widget_next_a_serif,
+                        R.id.lyrics_widget_next_a_mono
+                    ).forEach { views.setTextColor(it, nextColor) }
+                } else {
+                    intArrayOf(
+                        R.id.lyrics_widget_next_sans,
+                        R.id.lyrics_widget_next_serif,
+                        R.id.lyrics_widget_next_mono
+                    ).forEach { views.setTextColor(it, nextColor) }
+                }
+            }
         }
 
         private fun parseColor(hex: String, fallback: Int): Int =
