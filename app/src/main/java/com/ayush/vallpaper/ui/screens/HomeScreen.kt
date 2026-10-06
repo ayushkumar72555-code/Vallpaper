@@ -287,8 +287,7 @@ fun HomeScreen() {
                 widgetSettingsRepository.setFontFamily(updated.fontFamily)
                 widgetSettingsRepository.setTransition(updated.transition)
                 widgetSettingsRepository.setShowSongName(updated.showSongName)
-                widgetSettingsRepository.setCurrentColor(updated.currentColorHex)
-                widgetSettingsRepository.setNextColor(updated.nextColorHex)
+                widgetSettingsRepository.setLyricColor(updated.lyricColorHex)
                 LyricsWidgetReceiver.refreshAppearance(context)
             }
         )
