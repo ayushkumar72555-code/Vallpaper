@@ -6,6 +6,7 @@ import android.graphics.Bitmap
 import android.media.MediaMetadata
 import android.media.session.MediaController
 import android.media.session.MediaSessionManager
+import android.media.session.PlaybackState
 import android.net.Uri
 import android.util.Log
 import com.ayush.vallpaper.domain.model.Track
@@ -16,181 +17,235 @@ import kotlinx.coroutines.flow.asStateFlow
 import java.io.File
 import java.io.FileOutputStream
 
-class MediaSessionTrackRepository(
-    private val context: Context
-) : TrackRepository {
+class MediaSessionTrackRepository(private val context: Context) : TrackRepository {
+    companion object { private const val TAG = "VallpaperMedia" }
 
-    companion object {
-        private const val TAG = "VallpaperMedia"
-    }
-
-    private val mediaSessionManager =
-        context.getSystemService(MediaSessionManager::class.java)
-
+    private val mediaSessionManager = context.getSystemService(MediaSessionManager::class.java)
     private val notificationListenerComponent =
-        ComponentName(
-            context,
-            VallpaperNotificationListenerService::class.java
-        )
+        ComponentName(context, VallpaperNotificationListenerService::class.java)
 
     private val _currentTrack = MutableStateFlow<Track?>(null)
-
-    override val currentTrack: StateFlow<Track?> =
-        _currentTrack.asStateFlow()
+    override val currentTrack: StateFlow<Track?> = _currentTrack.asStateFlow()
 
     private val controllerCallbacks =
         mutableMapOf<MediaController, MediaController.Callback>()
 
-    private var isListening = false
+    private var listenerConnected = false
 
     private val activeSessionsListener =
         MediaSessionManager.OnActiveSessionsChangedListener { controllers ->
-            updateControllers(controllers.orEmpty())
+            if (listenerConnected) updateControllers(controllers.orEmpty())
         }
 
-    init {
-        refresh()
-    }
-
-    fun refresh() {
-        try {
-            val controllers =
-                mediaSessionManager?.getActiveSessions(
-                    notificationListenerComponent
-                ).orEmpty()
-
-            updateControllers(controllers)
-        } catch (_: SecurityException) {
-            _currentTrack.value = null
-        }
-    }
-
-    fun start() {
-        if (isListening) {
+    /**
+     * Must only be called from NotificationListenerService.onListenerConnected().
+     * Android requires the notification listener to be connected before
+     * accessing notification/media-session state.
+     */
+    fun onListenerConnected() {
+        if (listenerConnected) {
             refresh()
             return
         }
 
+        listenerConnected = true
         try {
             mediaSessionManager?.addOnActiveSessionsChangedListener(
                 activeSessionsListener,
                 notificationListenerComponent
             )
-
-            isListening = true
+            Log.d(TAG, "Notification listener connected; media session listener registered")
             refresh()
-        } catch (_: SecurityException) {
-            isListening = false
+        } catch (exception: SecurityException) {
+            Log.e(TAG, "Unable to access active media sessions", exception)
+            listenerConnected = false
+            clearControllers()
             _currentTrack.value = null
         }
     }
 
-    fun stop() {
-        if (isListening) {
-            mediaSessionManager?.removeOnActiveSessionsChangedListener(
-                activeSessionsListener
-            )
+    fun onListenerDisconnected() {
+        listenerConnected = false
+
+        try {
+            mediaSessionManager?.removeOnActiveSessionsChangedListener(activeSessionsListener)
+        } catch (exception: Exception) {
+            Log.d(TAG, "Could not remove media session listener", exception)
         }
 
-        isListening = false
+        clearControllers()
+        _currentTrack.value = null
+        Log.d(TAG, "Notification listener disconnected")
+    }
 
+    fun refresh() {
+        if (!listenerConnected) {
+            Log.d(TAG, "Refresh skipped: notification listener is not connected")
+            return
+        }
+
+        try {
+            val controllers = mediaSessionManager
+                ?.getActiveSessions(notificationListenerComponent)
+                .orEmpty()
+
+            Log.d(TAG, "Active media sessions: ${controllers.size}")
+            controllers.forEach { controller ->
+                Log.d(
+                    TAG,
+                    "Session ${controller.packageName}: state=${controller.playbackState?.state}, " +
+                        "title=${controller.metadata?.getString(MediaMetadata.METADATA_KEY_TITLE)}"
+                )
+            }
+
+            updateControllers(controllers)
+        } catch (exception: SecurityException) {
+            Log.e(TAG, "SecurityException while reading active media sessions", exception)
+            _currentTrack.value = null
+        } catch (exception: Exception) {
+            Log.e(TAG, "Unexpected error while reading active media sessions", exception)
+        }
+    }
+
+    private fun clearControllers() {
         controllerCallbacks.keys.toList().forEach { controller ->
-            controllerCallbacks[controller]?.let { callback ->
-                controller.unregisterCallback(callback)
+            controllerCallbacks.remove(controller)?.let { callback ->
+                try {
+                    controller.unregisterCallback(callback)
+                } catch (exception: Exception) {
+                    Log.d(TAG, "Could not unregister media controller callback", exception)
+                }
             }
         }
-
         controllerCallbacks.clear()
     }
 
-    private fun updateControllers(
-        controllers: List<MediaController>
-    ) {
+    private fun updateControllers(controllers: List<MediaController>) {
         controllerCallbacks.keys
             .filter { it !in controllers }
             .forEach { controller ->
                 controllerCallbacks.remove(controller)?.let { callback ->
-                    controller.unregisterCallback(callback)
+                    try {
+                        controller.unregisterCallback(callback)
+                    } catch (exception: Exception) {
+                        Log.d(TAG, "Could not unregister removed controller", exception)
+                    }
                 }
             }
 
         controllers.forEach { controller ->
             if (!controllerCallbacks.containsKey(controller)) {
                 val callback = object : MediaController.Callback() {
-                    override fun onMetadataChanged(
-                        metadata: MediaMetadata?
-                    ) {
+                    override fun onMetadataChanged(metadata: MediaMetadata?) {
+                        Log.d(TAG, "Metadata changed: ${controller.packageName}")
                         refresh()
                     }
 
-                    override fun onPlaybackStateChanged(
-                        state: android.media.session.PlaybackState?
-                    ) {
+                    override fun onPlaybackStateChanged(state: PlaybackState?) {
+                        Log.d(
+                            TAG,
+                            "Playback state changed: ${controller.packageName} -> ${state?.state}"
+                        )
                         refresh()
                     }
                 }
 
-                controllerCallbacks[controller] = callback
-                controller.registerCallback(callback)
+                try {
+                    controller.registerCallback(callback)
+                    controllerCallbacks[controller] = callback
+                } catch (exception: Exception) {
+                    Log.e(
+                        TAG,
+                        "Could not register callback for ${controller.packageName}",
+                        exception
+                    )
+                }
             }
         }
 
         updateCurrentTrack(controllers)
     }
 
-    private fun updateCurrentTrack(
-        controllers: List<MediaController>
-    ) {
-        val playingController =
-            controllers.firstOrNull { controller ->
-                controller.playbackState?.state ==
-                    android.media.session.PlaybackState.STATE_PLAYING
+    private fun updateCurrentTrack(controllers: List<MediaController>) {
+        val playingController = controllers.firstOrNull {
+            it.playbackState?.state == PlaybackState.STATE_PLAYING
+        }
+
+        val bufferingController = controllers.firstOrNull {
+            it.playbackState?.state == PlaybackState.STATE_BUFFERING
+        }
+
+        val controller = playingController
+            ?: bufferingController
+            ?: controllers.firstOrNull {
+                it.metadata != null &&
+                    it.playbackState?.state == PlaybackState.STATE_PAUSED
             }
+            ?: controllers.firstOrNull { it.metadata != null }
 
-        val controller =
-            playingController
-                ?: controllers.firstOrNull { it.metadata != null }
+        val track = controller?.let(::toTrack)
+        _currentTrack.value = track
 
-        _currentTrack.value = controller?.let(::toTrack)
+        if (track != null) {
+            Log.d(
+                TAG,
+                "Current track: ${track.title} - ${track.artist} " +
+                    "(${controller?.packageName})"
+            )
+        } else {
+            Log.d(TAG, "No usable media metadata found")
+        }
     }
 
-    private fun toTrack(
-        controller: MediaController
-    ): Track? {
-        val metadata = controller.metadata
-            ?: return null
+    private fun toTrack(controller: MediaController): Track? {
+        val metadata = controller.metadata ?: return null
 
-        val title = metadata.getString(
-            MediaMetadata.METADATA_KEY_TITLE
-        ) ?: return null
+        val title =
+            metadata.getString(MediaMetadata.METADATA_KEY_TITLE)
+                ?.takeIf { it.isNotBlank() }
+                ?: metadata.getString(MediaMetadata.METADATA_KEY_DISPLAY_TITLE)
+                    ?.takeIf { it.isNotBlank() }
+                ?: return null
 
-        val artist = metadata.getString(
-            MediaMetadata.METADATA_KEY_ARTIST
-        ).orEmpty()
+        val artist =
+            metadata.getString(MediaMetadata.METADATA_KEY_ARTIST)
+                ?.takeIf { it.isNotBlank() }
+                ?: metadata.getString(MediaMetadata.METADATA_KEY_DISPLAY_SUBTITLE)
+                    ?.takeIf { it.isNotBlank() }
+                ?: "Unknown artist"
 
-        val album = metadata.getString(
-            MediaMetadata.METADATA_KEY_ALBUM
-        ).orEmpty()
-
-        val artworkUrl = resolveArtwork(metadata)
-
-        Log.d(
-            TAG,
-            "Artwork for ${controller.packageName}: $artworkUrl"
-        )
+        val album =
+            metadata.getString(MediaMetadata.METADATA_KEY_ALBUM)
+                ?.takeIf { it.isNotBlank() }
+                ?: "Unknown album"
 
         return Track(
-            id = "${controller.packageName}:$title:$artist",
+            id = buildTrackId(controller, metadata, title, artist, album),
             title = title,
-            artist = artist.ifBlank { "Unknown artist" },
-            album = album.ifBlank { "Unknown album" },
-            artworkUrl = artworkUrl
+            artist = artist,
+            album = album,
+            artworkUrl = resolveArtwork(metadata)
         )
     }
 
-    private fun resolveArtwork(
-        metadata: MediaMetadata
+    private fun buildTrackId(
+        controller: MediaController,
+        metadata: MediaMetadata,
+        title: String,
+        artist: String,
+        album: String
     ): String {
+        val mediaId = metadata.getString(MediaMetadata.METADATA_KEY_MEDIA_ID)
+            ?.takeIf { it.isNotBlank() }
+
+        return if (mediaId != null) {
+            "${controller.packageName}:${mediaId}"
+        } else {
+            "${controller.packageName}:${title}:${artist}:${album}"
+        }
+    }
+
+    private fun resolveArtwork(metadata: MediaMetadata): String {
         val artworkKeys = listOf(
             MediaMetadata.METADATA_KEY_ART_URI,
             MediaMetadata.METADATA_KEY_ALBUM_ART_URI,
@@ -199,60 +254,33 @@ class MediaSessionTrackRepository(
 
         for (key in artworkKeys) {
             val uriString = metadata.getString(key)
-
             if (!uriString.isNullOrBlank()) {
                 val uri = Uri.parse(uriString)
                 val normalizedUri = copyUriToCacheIfNeeded(uri)
-
-                if (normalizedUri.isNotBlank()) {
-                    return normalizedUri
-                }
-
-                Log.d(
-                    TAG,
-                    "Could not read artwork URI: $uri"
-                )
+                if (normalizedUri.isNotBlank()) return normalizedUri
+                Log.d(TAG, "Could not read artwork URI: ${uri}")
             }
         }
 
         metadata.description?.iconUri?.let { uri ->
             val normalizedUri = copyUriToCacheIfNeeded(uri)
-
-            if (normalizedUri.isNotBlank()) {
-                return normalizedUri
-            }
-
-            Log.d(
-                TAG,
-                "Could not read description icon URI: $uri"
-            )
+            if (normalizedUri.isNotBlank()) return normalizedUri
         }
 
         metadata.description?.iconBitmap?.let { bitmap ->
             val cached = saveArtwork(bitmap, metadata)
-
-            if (cached.isNotBlank()) {
-                return cached
-            }
+            if (cached.isNotBlank()) return cached
         }
 
-        val bitmap = findArtworkBitmap(metadata)
-
-        if (bitmap != null) {
+        findArtworkBitmap(metadata)?.let { bitmap ->
             return saveArtwork(bitmap, metadata)
         }
 
-        Log.d(
-            TAG,
-            "No readable artwork found in MediaMetadata"
-        )
-
+        Log.d(TAG, "No readable artwork found in MediaMetadata")
         return ""
     }
 
-    private fun findArtworkBitmap(
-        metadata: MediaMetadata
-    ): Bitmap? {
+    private fun findArtworkBitmap(metadata: MediaMetadata): Bitmap? {
         val bitmapKeys = listOf(
             MediaMetadata.METADATA_KEY_ALBUM_ART,
             MediaMetadata.METADATA_KEY_ART,
@@ -260,65 +288,37 @@ class MediaSessionTrackRepository(
         )
 
         for (key in bitmapKeys) {
-            metadata.getBitmap(key)?.let { bitmap ->
-                return bitmap
-            }
+            metadata.getBitmap(key)?.let { return it }
         }
-
         return null
     }
 
-    private fun copyUriToCacheIfNeeded(
-        uri: Uri
-    ): String {
+    private fun copyUriToCacheIfNeeded(uri: Uri): String {
         return try {
             when (uri.scheme?.lowercase()) {
                 "http", "https" -> uri.toString()
-
                 "file" -> {
                     val file = File(uri.path ?: return "")
-                    if (file.exists() && file.length() > 0) {
-                        uri.toString()
-                    } else {
-                        ""
-                    }
+                    if (file.exists() && file.length() > 0) uri.toString() else ""
                 }
-
                 else -> copyProviderUriToCache(uri)
             }
         } catch (exception: Exception) {
-            Log.d(
-                TAG,
-                "Artwork URI read failed: $uri",
-                exception
-            )
+            Log.d(TAG, "Artwork URI read failed: ${uri}", exception)
             ""
         }
     }
 
-    private fun copyProviderUriToCache(
-        uri: Uri
-    ): String {
-        val artworkDirectory =
-            File(context.cacheDir, "media_artwork")
+    private fun copyProviderUriToCache(uri: Uri): String {
+        val artworkDirectory = File(context.cacheDir, "media_artwork")
+        if (!artworkDirectory.exists() && !artworkDirectory.mkdirs()) return ""
 
-        if (!artworkDirectory.exists()) {
-            artworkDirectory.mkdirs()
-        }
-
-        val safeName =
-            "uri_" + Integer.toHexString(uri.toString().hashCode())
-
-        val file = File(
-            artworkDirectory,
-            "$safeName.art"
-        )
+        val safeName = "uri_" + Integer.toHexString(uri.toString().hashCode())
+        val file = File(artworkDirectory, "${safeName}.art")
 
         return try {
             context.contentResolver.openInputStream(uri)?.use { input ->
-                FileOutputStream(file).use { output ->
-                    input.copyTo(output)
-                }
+                FileOutputStream(file).use { output -> input.copyTo(output) }
             } ?: return ""
 
             if (file.length() <= 0) {
@@ -328,48 +328,27 @@ class MediaSessionTrackRepository(
 
             Uri.fromFile(file).toString()
         } catch (exception: Exception) {
-            Log.d(
-                TAG,
-                "Content provider artwork could not be copied: $uri",
-                exception
-            )
+            Log.d(TAG, "Content provider artwork could not be copied: ${uri}", exception)
             file.delete()
             ""
         }
     }
 
-    private fun saveArtwork(
-        bitmap: Bitmap,
-        metadata: MediaMetadata
-    ): String {
+    private fun saveArtwork(bitmap: Bitmap, metadata: MediaMetadata): String {
         return try {
-            val artworkDirectory =
-                File(context.cacheDir, "media_artwork")
+            val artworkDirectory = File(context.cacheDir, "media_artwork")
+            if (!artworkDirectory.exists() && !artworkDirectory.mkdirs()) return ""
 
-            if (!artworkDirectory.exists()) {
-                artworkDirectory.mkdirs()
-            }
-
-            val title = metadata.getString(
-                MediaMetadata.METADATA_KEY_TITLE
-            ).orEmpty()
-
+            val title = metadata.getString(MediaMetadata.METADATA_KEY_TITLE).orEmpty()
             val safeName = title
                 .ifBlank { "unknown" }
                 .replace(Regex("[^A-Za-z0-9._-]"), "_")
                 .take(80)
 
-            val file = File(
-                artworkDirectory,
-                "$safeName.jpg"
-            )
+            val file = File(artworkDirectory, "${safeName}.jpg")
 
             FileOutputStream(file).use { output ->
-                bitmap.compress(
-                    Bitmap.CompressFormat.JPEG,
-                    95,
-                    output
-                )
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 95, output)
             }
 
             if (file.length() <= 0) {
@@ -379,11 +358,7 @@ class MediaSessionTrackRepository(
 
             Uri.fromFile(file).toString()
         } catch (exception: Exception) {
-            Log.d(
-                TAG,
-                "Bitmap artwork could not be saved",
-                exception
-            )
+            Log.d(TAG, "Bitmap artwork could not be saved", exception)
             ""
         }
     }
