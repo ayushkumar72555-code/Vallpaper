@@ -1,9 +1,8 @@
 package com.ayush.vallpaper.widget
 
-import android.content.ComponentName
+import android.content.Intent
 import android.content.Context
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.TextAlign as ComposeTextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
@@ -50,13 +49,13 @@ class LyricsWidget : GlanceAppWidget() {
         state: LyricsWidgetState,
         context: Context
     ) {
-        val background = ColorProvider(Color(0xFF101010))
-        val orange = ColorProvider(Color(0xFFFF7A00))
-        val primary = ColorProvider(Color(0xFFF5F5F5))
-        val secondary = ColorProvider(Color(0xFF8F8F8F))
+        val background = ColorProvider(Color(0xFF101010), Color(0xFF101010))
+        val orange = ColorProvider(Color(0xFFFF7A00), Color(0xFFFF7A00))
+        val primary = ColorProvider(Color(0xFFF5F5F5), Color(0xFFF5F5F5))
+        val secondary = ColorProvider(Color(0xFF8F8F8F), Color(0xFF8F8F8F))
 
         val openAppAction = actionStartActivity(
-            ComponentName(context, MainActivity::class.java)
+            Intent(context, MainActivity::class.java)
         )
 
         Column(
