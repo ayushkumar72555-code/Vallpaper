@@ -91,13 +91,12 @@ class LyricsSyncEngine(
         var lastStatus = ""
         var lastLogAt = 0L
 
-        while (kotlinx.coroutines.currentCoroutineContext().isActive && hasWidgets()) {
+        while (hasWidgets()) {
             val currentTrack = trackRepository.currentTrack.value
             if (currentTrack?.id != track.id) return
 
-            val snapshot = trackRepository.currentPlaybackSnapshot()
             val position = trackRepository.currentPlaybackPositionMs()
-            val playbackState = snapshot?.state
+            val playbackState = trackRepository.currentPlaybackState()
             val status = statusLabel(playbackState)
 
             if (status != lastStatus) {
@@ -133,11 +132,8 @@ class LyricsSyncEngine(
                 Log.d(
                     TAG,
                     "CLOCK track=${track.title} " +
-                        "raw=${snapshot?.positionMs}ms " +
-                        "projected=${position}ms " +
-                        "speed=${snapshot?.playbackSpeed} " +
-                        "state=${snapshot?.state} " +
-                        "lastUpdate=${snapshot?.lastPositionUpdateTime}"
+                        "position=${position}ms " +
+                        "state=${playbackState}"
                 )
                 lastLogAt = now
             }
@@ -145,7 +141,6 @@ class LyricsSyncEngine(
             val nextTimestamp = position?.let(lyrics::nextTimestampAfter)
             val delayMs = if (
                 position != null &&
-                snapshot != null &&
                 isPlayingState(playbackState) &&
                 nextTimestamp != null
             ) {
