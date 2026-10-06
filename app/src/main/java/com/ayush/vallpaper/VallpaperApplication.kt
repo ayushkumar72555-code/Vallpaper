@@ -205,6 +205,11 @@ class VallpaperApplication : Application() {
             )
 
             currentCoroutineContext().ensureActive()
+            if (!isWallpaperRequestStillCurrent(track, settings)) {
+                Log.d(TAG, "Skipping stale wallpaper request before applying: " + track.title)
+                return
+            }
+
             _automaticWallpaperStatus.value =
                 AutomaticWallpaperStatus.APPLYING
 
@@ -212,6 +217,10 @@ class VallpaperApplication : Application() {
 
             if (settings.applyToHomeScreen) {
                 currentCoroutineContext().ensureActive()
+                if (!isWallpaperRequestStillCurrent(track, settings)) {
+                    Log.d(TAG, "Skipping stale home wallpaper request: " + track.title)
+                    return
+                }
 
                 val result = WallpaperApplier.apply(
                     applicationContext,
@@ -231,6 +240,10 @@ class VallpaperApplication : Application() {
 
             if (settings.applyToLockScreen) {
                 currentCoroutineContext().ensureActive()
+                if (!isWallpaperRequestStillCurrent(track, settings)) {
+                    Log.d(TAG, "Skipping stale lock wallpaper request: " + track.title)
+                    return
+                }
 
                 val result = WallpaperApplier.apply(
                     applicationContext,
@@ -274,6 +287,21 @@ class VallpaperApplication : Application() {
                 bitmap.recycle()
             }
         }
+    }
+
+    private fun isWallpaperRequestStillCurrent(
+        track: Track,
+        settings: AppSettings
+    ): Boolean {
+        if (!settings.automaticWallpaper) return false
+        if (!settings.applyToHomeScreen && !settings.applyToLockScreen) return false
+
+        val currentTrack = trackRepository.currentTrack.value ?: return false
+
+        return currentTrack.id == track.id &&
+            currentTrack.title == track.title &&
+            currentTrack.artist == track.artist &&
+            currentTrack.artworkUrl == track.artworkUrl
     }
 
     override fun onTerminate() {
