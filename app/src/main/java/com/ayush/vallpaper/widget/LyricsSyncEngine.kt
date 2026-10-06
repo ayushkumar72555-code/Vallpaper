@@ -120,8 +120,8 @@ class LyricsSyncEngine(
 
                     Log.d(
                         TAG,
-                        "LYRIC index=\$index position=${position}ms " +
-                            "status=\$status text=${state.currentLine}"
+                        "LYRIC index=$index position=${position}ms " +
+                            "status=$status text=${state.currentLine}"
                     )
 
                     lastIndex = index
