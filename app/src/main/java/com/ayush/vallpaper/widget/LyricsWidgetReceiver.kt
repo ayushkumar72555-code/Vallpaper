@@ -269,6 +269,48 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
             }
         }
 
+        fun updateLyrics(context: Context, state: LyricsWidgetState) {
+            val manager = AppWidgetManager.getInstance(context)
+            val ids = manager.getAppWidgetIds(
+                ComponentName(context, LyricsWidgetReceiver::class.java)
+            )
+            if (ids.isEmpty()) return
+
+            val settings = LyricsWidgetSettingsRepository(context).read()
+            val views = createViews(context, settings)
+
+            applyCommonAppearance(views, settings)
+
+            if (isAnimated(settings)) {
+                val targetBuffer = 1 - activeBuffer.get()
+                setAnimatedBufferText(
+                    views,
+                    targetBuffer,
+                    state.currentLine.ifBlank { "Lyrics unavailable" }
+                )
+
+                if (settings.transition == LyricsWidgetSettings.TRANSITION_SLIDE) {
+                    applySlideWidgetSettings(views, settings)
+                } else {
+                    applyAnimatedWidgetSettings(views, settings)
+                }
+
+                views.setDisplayedChild(
+                    R.id.lyrics_widget_current_flipper,
+                    targetBuffer
+                )
+                activeBuffer.set(targetBuffer)
+            } else {
+                setStaticCurrentText(
+                    views,
+                    state.currentLine.ifBlank { "Lyrics unavailable" }
+                )
+                applyWidgetSettings(views, settings)
+            }
+
+            manager.partiallyUpdateAppWidget(ids, views)
+        }
+
         fun updatePlayback(
             context: Context,
             positionMs: Long,
