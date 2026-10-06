@@ -61,6 +61,9 @@ import com.ayush.vallpaper.viewmodel.HomeUiState
 import com.ayush.vallpaper.viewmodel.HomeViewModel
 import com.ayush.vallpaper.wallpaper.WallpaperApplier
 import com.ayush.vallpaper.wallpaper.WallpaperDimensions
+import com.ayush.vallpaper.widget.LyricsWidgetReceiver
+import com.ayush.vallpaper.widget.LyricsWidgetSettings
+import com.ayush.vallpaper.widget.LyricsWidgetSettingsRepository
 
 private val RetroOrange = Color(0xFFFF7A00)
 private val RetroOrangeDark = Color(0xFFFF8A00)
@@ -75,6 +78,8 @@ fun HomeScreen() {
     val track = state.track
     var showSettings by remember { mutableStateOf(false) }
     var showFullPreview by remember { mutableStateOf(false) }
+    val widgetSettingsRepository = remember { LyricsWidgetSettingsRepository(context) }
+    var widgetSettings by remember { mutableStateOf(widgetSettingsRepository.read()) }
 
     val (wallpaperWidth, wallpaperHeight) = WallpaperDimensions.get(context)
     val accent = if (isSystemInDarkTheme()) RetroOrangeDark else RetroOrange
@@ -274,7 +279,15 @@ fun HomeScreen() {
             onDismiss = { showSettings = false },
             onAutomaticWallpaperChanged = { viewModel.toggleAutomaticWallpaper() },
             onHomeScreenChanged = { viewModel.setApplyToHomeScreen(it) },
-            onLockScreenChanged = { viewModel.setApplyToLockScreen(it) }
+            onLockScreenChanged = { viewModel.setApplyToLockScreen(it) },
+            widgetSettings = widgetSettings,
+            onWidgetSettingsChanged = { updated ->
+                widgetSettings = updated
+                widgetSettingsRepository.setFontSize(updated.fontSizeSp)
+                widgetSettingsRepository.setFontFamily(updated.fontFamily)
+                widgetSettingsRepository.setTransition(updated.transition)
+                LyricsWidgetReceiver.refreshAppearance(context)
+            }
         )
     }
 }
@@ -339,7 +352,9 @@ private fun SettingsOverlay(
     onDismiss: () -> Unit,
     onAutomaticWallpaperChanged: () -> Unit,
     onHomeScreenChanged: (Boolean) -> Unit,
-    onLockScreenChanged: (Boolean) -> Unit
+    onLockScreenChanged: (Boolean) -> Unit,
+    widgetSettings: LyricsWidgetSettings,
+    onWidgetSettingsChanged: (LyricsWidgetSettings) -> Unit
 ) {
     Dialog(onDismissRequest = onDismiss) {
         RetroPanel(accent) {
@@ -379,7 +394,14 @@ private fun SettingsOverlay(
                     checked = state.applyToLockScreen,
                     onCheckedChange = onLockScreenChanged
                 )
-            }
+
+
+                Spacer(Modifier.height(24.dp))
+                LyricsWidgetSettingsPanel(
+                    settings = widgetSettings,
+                    accent = accent,
+                    onChanged = onWidgetSettingsChanged
+                )            }
         }
     }
 }
