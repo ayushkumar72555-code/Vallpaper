@@ -1,12 +1,18 @@
 package com.ayush.vallpaper
 
 import android.app.Application
+import android.appwidget.AppWidgetManager
+import android.content.ComponentName
 import android.graphics.Bitmap
 import android.util.Log
 import com.ayush.vallpaper.data.AppSettingsRepository
+import com.ayush.vallpaper.data.LyricsRepository
 import com.ayush.vallpaper.data.MediaSessionTrackRepository
 import com.ayush.vallpaper.domain.model.AppSettings
 import com.ayush.vallpaper.domain.model.Track
+import com.ayush.vallpaper.widget.LyricsWidget
+import com.ayush.vallpaper.widget.LyricsWidgetReceiver
+import com.ayush.vallpaper.widget.LyricsWidgetStore
 import com.ayush.vallpaper.ui.screens.WallpaperTarget
 import com.ayush.vallpaper.wallpaper.ArtworkLoader
 import com.ayush.vallpaper.wallpaper.WallpaperApplier
@@ -19,6 +25,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -47,6 +55,9 @@ class VallpaperApplication : Application() {
 
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
+    private val lyricsRepository by lazy { LyricsRepository() }
+    private var lyricsWidgetJob: Job? = null
+
     private val _automaticWallpaperStatus =
         MutableStateFlow(AutomaticWallpaperStatus.IDLE)
 
@@ -62,6 +73,78 @@ class VallpaperApplication : Application() {
         // VallpaperNotificationListenerService.onListenerConnected().
         // Do not query MediaSessionManager before that lifecycle event.
         startAutomaticWallpaperUpdates()
+        if (hasLyricsWidget()) {
+            startLyricsWidgetSync()
+        }
+    }
+
+    fun startLyricsWidgetSync() {
+        if (lyricsWidgetJob?.isActive == true) return
+
+        lyricsWidgetJob = applicationScope.launch {
+            trackRepository.currentTrack
+                .distinctUntilChanged { old, new -> old?.id == new?.id }
+                .collectLatest { track ->
+                    if (!hasLyricsWidget()) return@collectLatest
+
+                    if (track == null) {
+                        LyricsWidgetStore.clear(applicationContext)
+                        LyricsWidget().updateAll(applicationContext)
+                        return@collectLatest
+                    }
+
+                    val lyrics = lyricsRepository.findLyrics(track)
+                    if (lyrics == null) {
+                        LyricsWidgetStore.clear(applicationContext)
+                        LyricsWidget().updateAll(applicationContext)
+                        return@collectLatest
+                    }
+
+                    LyricsWidgetStore.saveLyrics(
+                        context = applicationContext,
+                        trackId = track.id,
+                        title = track.title,
+                        artist = track.artist,
+                        lyrics = lyrics
+                    )
+                    LyricsWidget().updateAll(applicationContext)
+
+                    var lastIndex = Int.MIN_VALUE
+
+                    while (isActive && hasLyricsWidget()) {
+                        val currentTrack = trackRepository.currentTrack.value
+                        if (currentTrack?.id != track.id) break
+
+                        val position = trackRepository.currentPlaybackPositionMs() ?: 0L
+                        val index = lyrics.lineIndexAt(position)
+
+                        if (index != lastIndex) {
+                            LyricsWidgetStore.updateCurrentIndex(applicationContext, index)
+                            LyricsWidget().updateAll(applicationContext)
+                            lastIndex = index
+                        }
+
+                        val nextTimestamp = lyrics.nextTimestampAfter(position)
+                        val waitMs = if (nextTimestamp == null) {
+                            2_000L
+                        } else {
+                            (nextTimestamp - position).coerceIn(150L, 5_000L)
+                        }
+                        delay(waitMs)
+                    }
+                }
+        }
+    }
+
+    fun stopLyricsWidgetSync() {
+        lyricsWidgetJob?.cancel()
+        lyricsWidgetJob = null
+    }
+
+    private fun hasLyricsWidget(): Boolean {
+        val manager = AppWidgetManager.getInstance(applicationContext)
+        val provider = ComponentName(applicationContext, LyricsWidgetReceiver::class.java)
+        return manager.getAppWidgetIds(provider).isNotEmpty()
     }
 
     private fun startAutomaticWallpaperUpdates() {
