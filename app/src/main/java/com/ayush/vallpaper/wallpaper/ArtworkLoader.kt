@@ -4,7 +4,6 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
-import java.io.File
 import coil3.ImageLoader
 import coil3.request.ImageRequest
 import coil3.request.SuccessResult
