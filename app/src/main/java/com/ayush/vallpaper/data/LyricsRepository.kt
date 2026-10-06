@@ -26,7 +26,9 @@ class LyricsRepository {
         memoryCache[track.id]?.let { return@withContext it }
 
         val result = findExact(track) ?: findBySearch(track)
-        memoryCache[track.id] = result
+        if (result != null) {
+            memoryCache[track.id] = result
+        }
         result
     }
 
