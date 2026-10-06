@@ -2,6 +2,9 @@ package com.ayush.vallpaper.wallpaper
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
+import java.io.File
 import coil3.ImageLoader
 import coil3.request.ImageRequest
 import coil3.request.SuccessResult
@@ -17,6 +20,25 @@ class ArtworkLoader(
 
     suspend fun load(artworkUrl: String): Bitmap? {
         if (artworkUrl.isBlank()) return null
+
+        // Artwork copied from a MediaSession content provider is stored as a
+        // local file. Coil may reject the synthetic ".art" extension even
+        // though the bytes are a perfectly valid JPEG/PNG. Decode local files
+        // directly first so artwork does not disappear just because the
+        // provider did not expose a MIME type.
+        val uri = runCatching { Uri.parse(artworkUrl) }.getOrNull()
+        if (uri?.scheme == "file") {
+            val path = uri.path
+            if (!path.isNullOrBlank()) {
+                val localBitmap = runCatching {
+                    BitmapFactory.decodeFile(path)
+                }.getOrNull()
+
+                if (localBitmap != null) {
+                    return normalizeArtwork(localBitmap)
+                }
+            }
+        }
 
         val request = ImageRequest.Builder(context)
             .data(artworkUrl)
