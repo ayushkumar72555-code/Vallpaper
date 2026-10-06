@@ -57,13 +57,12 @@
         </LinearLayout>
     </LinearLayout>
 
-    <SeekBar
+    <ProgressBar
         android:id="@+id/lyrics_widget_progress"
         android:layout_width="match_parent"
         android:layout_height="24dp"
         android:layout_marginTop="6dp"
         android:progressTint="#FFFFFF"
-        android:thumbTint="#FFFFFF"
         android:splitTrack="false"
         android:clickable="false"
         android:focusable="false" />
@@ -75,7 +74,7 @@
         android:gravity="center"
         android:orientation="horizontal">
 
-        <ImageButton
+        <ImageView
             android:id="@+id/lyrics_widget_previous"
             android:layout_width="42dp"
             android:layout_height="36dp"
@@ -83,7 +82,7 @@
             android:src="@android:drawable/ic_media_previous"
             android:contentDescription="Previous" />
 
-        <ImageButton
+        <ImageView
             android:id="@+id/lyrics_widget_play_pause"
             android:layout_width="48dp"
             android:layout_height="40dp"
@@ -91,7 +90,7 @@
             android:src="@android:drawable/ic_media_play"
             android:contentDescription="Play or pause" />
 
-        <ImageButton
+        <ImageView
             android:id="@+id/lyrics_widget_next"
             android:layout_width="42dp"
             android:layout_height="36dp"
