@@ -93,7 +93,6 @@ class LyricsSyncEngine(
         var lastIndex = Int.MIN_VALUE
         var lastStatus = ""
         var lastLogAt = 0L
-        var lastProgressUpdateAt = 0L
 
         while (currentCoroutineContext().isActive && hasWidgets()) {
             val currentTrack = trackRepository.currentTrack.value
@@ -102,16 +101,6 @@ class LyricsSyncEngine(
             val position = trackRepository.currentPlaybackPositionMs()
             val playbackState = trackRepository.currentPlaybackState()
             val status = statusLabel(playbackState)
-
-            val now = android.os.SystemClock.elapsedRealtime()
-            if (now - lastProgressUpdateAt >= 500L) {
-                LyricsWidgetReceiver.updateProgress(
-                    context = context,
-                    positionMs = position,
-                    durationMs = track.durationMs
-                )
-                lastProgressUpdateAt = now
-            }
 
             if (status != lastStatus) {
                 LyricsWidgetStore.updatePlaybackStatus(context, status)
