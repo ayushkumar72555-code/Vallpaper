@@ -36,7 +36,7 @@ class LyricsRepository {
                 connectTimeout = 6_000
                 readTimeout = 6_000
                 setRequestProperty("Accept", "application/json")
-                setRequestProperty("User-Agent", "Vallpaper/1.0")
+                setRequestProperty("User-Agent", "Vallpaper/1.0 (https://github.com/ayushkumar72555-code/Vallpaper)")
             }
 
             try {
