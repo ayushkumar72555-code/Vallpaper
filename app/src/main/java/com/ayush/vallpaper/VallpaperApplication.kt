@@ -125,13 +125,12 @@ class VallpaperApplication : Application() {
                             lastIndex = index
                         }
 
-                        val nextTimestamp = lyrics.nextTimestampAfter(position)
-                        val waitMs = if (nextTimestamp == null) {
-                            2_000L
-                        } else {
-                            (nextTimestamp - position).coerceIn(150L, 5_000L)
-                        }
-                        delay(waitMs)
+                        // Poll the media session frequently enough to react
+                        // to seeks, pauses, resumes, and playback-speed changes.
+                        // The widget itself is only re-rendered when the lyric
+                        // line changes, so this does not cause per-frame widget
+                        // updates.
+                        delay(250L)
                     }
                 }
         }
