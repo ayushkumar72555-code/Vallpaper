@@ -2,6 +2,7 @@ package com.ayush.vallpaper.widget
 
 import android.content.Context
 import androidx.compose.ui.graphics.Color
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.text.style.TextAlign
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
@@ -33,9 +34,11 @@ import com.ayush.vallpaper.VallpaperApplication
 class LyricsWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val state = LyricsWidgetStore.read(context)
+        val initialState = LyricsWidgetStore.read(context)
+        val stateFlow = LyricsWidgetStore.stateFlow(context)
 
         provideContent {
+            val state by stateFlow.collectAsState(initial = initialState)
             LyricsWidgetContent(state)
         }
     }
