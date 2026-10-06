@@ -40,6 +40,11 @@ class MediaSessionTrackRepository(private val context: Context) : TrackRepositor
     private val controllerCallbacks =
         mutableMapOf<MediaController, MediaController.Callback>()
 
+    // Recent controller activity lets us choose the session the user actually
+    // interacted with when Android exposes several media sessions at once.
+    private val controllerLastActivity =
+        mutableMapOf<MediaController, Long>()
+
     // Some media apps expose their MediaSession through the media notification
     // even when the session is not returned by getActiveSessions(). Keep those
     // controllers as a fallback, keyed by notification instance. A package-only
@@ -166,7 +171,10 @@ class MediaSessionTrackRepository(private val context: Context) : TrackRepositor
                         MediaController(context, token)
                     }
                     notificationControllers[sbn.key] = controllers
-                    controllers.forEach(::registerControllerCallback)
+                    controllers.forEach {
+                        registerControllerCallback(it)
+                        markControllerActive(it)
+                    }
 
                     refresh()
                     return
@@ -201,6 +209,7 @@ class MediaSessionTrackRepository(private val context: Context) : TrackRepositor
             )
 
             registerControllerCallback(controller)
+            markControllerActive(controller)
             refresh()
         } catch (exception: Exception) {
             Log.e(
@@ -254,6 +263,7 @@ class MediaSessionTrackRepository(private val context: Context) : TrackRepositor
             }
         }
         controllerCallbacks.clear()
+        controllerLastActivity.clear()
         currentController = null
         playbackClock.reset()
     }
@@ -283,14 +293,16 @@ class MediaSessionTrackRepository(private val context: Context) : TrackRepositor
 
         val callback = object : MediaController.Callback() {
             override fun onMetadataChanged(metadata: MediaMetadata?) {
-                Log.d(TAG, "Metadata changed: ${controller.packageName}")
+                markControllerActive(controller)
+                Log.d(TAG, "Metadata changed: " + controller.packageName)
                 refresh()
             }
 
             override fun onPlaybackStateChanged(state: PlaybackState?) {
+                markControllerActive(controller)
                 Log.d(
                     TAG,
-                    "Playback state changed: ${controller.packageName} -> ${state?.state}"
+                    "Playback state changed: " + controller.packageName + " -> " + state?.state
                 )
                 refresh()
             }
@@ -309,21 +321,7 @@ class MediaSessionTrackRepository(private val context: Context) : TrackRepositor
     }
 
     private fun updateCurrentTrack(controllers: List<MediaController>) {
-        val playingController = controllers.firstOrNull {
-            it.playbackState?.state == PlaybackState.STATE_PLAYING
-        }
-
-        val bufferingController = controllers.firstOrNull {
-            it.playbackState?.state == PlaybackState.STATE_BUFFERING
-        }
-
-        val controller = playingController
-            ?: bufferingController
-            ?: controllers.firstOrNull {
-                it.metadata != null &&
-                    it.playbackState?.state == PlaybackState.STATE_PAUSED
-            }
-            ?: controllers.firstOrNull { it.metadata != null }
+        val controller = selectBestController(controllers)
 
         val previousController = currentController
         currentController = controller
@@ -340,12 +338,56 @@ class MediaSessionTrackRepository(private val context: Context) : TrackRepositor
         if (track != null) {
             Log.d(
                 TAG,
-                "Current track: ${track.title} - ${track.artist} " +
-                    "(${controller?.packageName})"
+                "Current track: " + track.title + " - " + track.artist +
+                    " (" + controller?.packageName + "), state=" + controller?.playbackState?.state
             )
         } else {
             Log.d(TAG, "No usable media metadata found")
         }
+    }
+
+    /** Select the session that most likely represents the user's actual listening session. */
+    private fun selectBestController(
+        controllers: List<MediaController>
+    ): MediaController? {
+        val candidates = controllers.filter {
+            it.metadata != null || it.playbackState != null
+        }
+        if (candidates.isEmpty()) return null
+
+        val now = android.os.SystemClock.elapsedRealtime()
+        return candidates.maxWithOrNull(
+            compareBy<MediaController> { playbackPriority(it.playbackState?.state) }
+                .thenBy { if (it.metadata != null) 1 else 0 }
+                .thenBy { recencyScore(it, now) }
+        )
+    }
+
+    private fun playbackPriority(state: Int?): Int = when (state) {
+        PlaybackState.STATE_PLAYING -> 5
+        PlaybackState.STATE_BUFFERING,
+        PlaybackState.STATE_FAST_FORWARDING,
+        PlaybackState.STATE_REWINDING -> 4
+        PlaybackState.STATE_PAUSED -> 3
+        PlaybackState.STATE_CONNECTING -> 2
+        PlaybackState.STATE_NONE,
+        PlaybackState.STATE_ERROR -> 0
+        else -> 1
+    }
+
+    private fun recencyScore(
+        controller: MediaController,
+        nowElapsedRealtime: Long
+    ): Long {
+        val lastActivity = controllerLastActivity[controller] ?: return 0L
+        return (nowElapsedRealtime - lastActivity)
+            .coerceIn(0L, 60_000L)
+            .let { 60_000L - it }
+    }
+
+    private fun markControllerActive(controller: MediaController) {
+        controllerLastActivity[controller] =
+            android.os.SystemClock.elapsedRealtime()
     }
 
     fun currentPlaybackState(): Int? {
