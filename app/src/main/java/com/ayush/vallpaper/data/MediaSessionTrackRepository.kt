@@ -127,6 +127,51 @@ class MediaSessionTrackRepository(private val context: Context) : TrackRepositor
     fun onMediaNotificationPosted(sbn: StatusBarNotification) {
         if (!listenerConnected) return
 
+        // Android 37+ can query sessions for the exact package. This is
+        // more reliable than the global active-session list for players such
+        // as Joytify that may publish a package session without appearing in
+        // the global ordering.
+        if (Build.VERSION.SDK_INT >= 37) {
+            try {
+                val packageTokens = mediaSessionManager
+                    ?.getActiveSessionsForPackage(
+                        sbn.packageName,
+                        notificationListenerComponent
+                    )
+                    .orEmpty()
+
+                if (packageTokens.isNotEmpty()) {
+                    Log.d(
+                        TAG,
+                        "Package media sessions found: package=" +
+                            sbn.packageName + ", count=" + packageTokens.size
+                    )
+
+                    packageTokens.forEach { packageToken ->
+                        val controller = MediaController(context, packageToken)
+                        notificationControllers[sbn.packageName] = controller
+                        registerControllerCallback(controller)
+                    }
+
+                    refresh()
+                    return
+                }
+            } catch (exception: SecurityException) {
+                Log.d(
+                    TAG,
+                    "Package session access denied for " + sbn.packageName +
+                        "; falling back to notification token",
+                    exception
+                )
+            } catch (exception: Exception) {
+                Log.d(
+                    TAG,
+                    "Package session lookup failed for " + sbn.packageName,
+                    exception
+                )
+            }
+        }
+
         val token = extractMediaSessionToken(sbn) ?: return
 
         try {
@@ -135,7 +180,7 @@ class MediaSessionTrackRepository(private val context: Context) : TrackRepositor
 
             Log.d(
                 TAG,
-                "Media notification session found: package=${sbn.packageName}, " +
+                "Media notification session found: package=" + sbn.packageName + ", " +
                     "title=${controller.metadata?.getString(MediaMetadata.METADATA_KEY_TITLE)}, " +
                     "state=${controller.playbackState?.state}"
             )
@@ -145,7 +190,7 @@ class MediaSessionTrackRepository(private val context: Context) : TrackRepositor
         } catch (exception: Exception) {
             Log.e(
                 TAG,
-                "Could not create MediaController from notification: ${sbn.packageName}",
+                "Could not create MediaController from notification: " + sbn.packageName,
                 exception
             )
         }
