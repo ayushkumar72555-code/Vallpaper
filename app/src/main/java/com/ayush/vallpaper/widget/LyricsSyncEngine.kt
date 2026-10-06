@@ -15,7 +15,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlin.math.max
 import kotlin.math.min
@@ -92,13 +91,14 @@ class LyricsSyncEngine(
         var lastStatus = ""
         var lastLogAt = 0L
 
-        while (isActive && hasWidgets()) {
+        while (kotlinx.coroutines.currentCoroutineContext().isActive && hasWidgets()) {
             val currentTrack = trackRepository.currentTrack.value
             if (currentTrack?.id != track.id) return
 
             val snapshot = trackRepository.currentPlaybackSnapshot()
             val position = trackRepository.currentPlaybackPositionMs()
-            val status = statusLabel(snapshot?.state)
+            val playbackState = snapshot?.state
+            val status = statusLabel(playbackState)
 
             if (status != lastStatus) {
                 LyricsWidgetStore.updatePlaybackStatus(context, status)
@@ -146,7 +146,7 @@ class LyricsSyncEngine(
             val delayMs = if (
                 position != null &&
                 snapshot != null &&
-                isPlayingState(snapshot.state) &&
+                isPlayingState(playbackState) &&
                 nextTimestamp != null
             ) {
                 val remaining = nextTimestamp - position
