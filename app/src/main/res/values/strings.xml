@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Vallpaper</string>
+    <string name="lyrics_widget_description">Live synced lyrics for the music you are playing.</string>
 </resources>
