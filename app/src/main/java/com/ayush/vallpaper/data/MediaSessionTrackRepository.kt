@@ -154,11 +154,11 @@ class MediaSessionTrackRepository(private val context: Context) : TrackRepositor
                             sbn.packageName + ", count=" + packageTokens.size
                     )
 
-                    packageTokens.forEach { packageToken ->
-                        val controller = MediaController(context, packageToken)
-                        notificationControllers[sbn.key] = packageTokens.map { token -> MediaController(context, token) }
-                    notificationControllers[sbn.key].orEmpty().forEach(::registerControllerCallback)
+                    val controllers = packageTokens.map { token ->
+                        MediaController(context, token)
                     }
+                    notificationControllers[sbn.key] = controllers
+                    controllers.forEach(::registerControllerCallback)
 
                     refresh()
                     return
