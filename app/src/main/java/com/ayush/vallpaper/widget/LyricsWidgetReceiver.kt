@@ -8,6 +8,7 @@ import android.content.Context
 import android.content.Intent
 import android.widget.RemoteViews
 import com.ayush.vallpaper.MainActivity
+import com.ayush.vallpaper.R
 
 class LyricsWidgetReceiver : AppWidgetProvider() {
 
