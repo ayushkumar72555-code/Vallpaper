@@ -37,6 +37,10 @@ class VallpaperNotificationListenerService : NotificationListenerService() {
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
+        // First try the notification itself. MediaStyle notifications can
+        // carry the MediaSession.Token even when getActiveSessions() does not
+        // expose that player's session.
+        vallpaperApplication.trackRepository.onMediaNotificationPosted(sbn)
         vallpaperApplication.trackRepository.refresh()
     }
 
