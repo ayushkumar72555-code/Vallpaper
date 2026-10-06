@@ -259,52 +259,5 @@
             </ViewFlipper>
         </FrameLayout>
 
-        <!-- Next line has its natural measured height. No fixed-height box,
-             no vertical translation, and no parent clipping. -->
-        <TextView
-            android:id="@+id/lyrics_widget_next_a_sans"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="-12dp"
-            android:paddingTop="0dp"
-            android:paddingBottom="0dp"
-            android:gravity="center"
-            android:includeFontPadding="true"
-            android:textColor="#666B73"
-            android:textSize="12sp"
-            android:maxLines="1"
-            android:ellipsize="end" />
-
-        <TextView
-            android:id="@+id/lyrics_widget_next_a_serif"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="-12dp"
-            android:paddingTop="0dp"
-            android:paddingBottom="0dp"
-            android:gravity="center"
-            android:includeFontPadding="true"
-            android:textColor="#666B73"
-            android:textSize="12sp"
-            android:fontFamily="serif"
-            android:maxLines="1"
-            android:ellipsize="end"
-            android:visibility="gone" />
-
-        <TextView
-            android:id="@+id/lyrics_widget_next_a_mono"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="-12dp"
-            android:paddingTop="0dp"
-            android:paddingBottom="0dp"
-            android:gravity="center"
-            android:includeFontPadding="true"
-            android:textColor="#666B73"
-            android:textSize="12sp"
-            android:fontFamily="monospace"
-            android:maxLines="1"
-            android:ellipsize="end"
-            android:visibility="gone" />
     </LinearLayout>
 </LinearLayout>
