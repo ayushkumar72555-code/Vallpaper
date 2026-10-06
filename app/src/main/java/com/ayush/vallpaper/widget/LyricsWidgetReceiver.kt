@@ -76,7 +76,6 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                 "PLAY MUSIC TO SHOW LYRICS"
             )
             if (settings.transition == LyricsWidgetSettings.TRANSITION_SLIDE) {
-                setSlideNextText(initial, "")
                 applySlideWidgetSettings(initial, settings)
             } else {
                 applyAnimatedWidgetSettings(initial, settings)
@@ -322,12 +321,6 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                 R.id.lyrics_widget_current_serif,
                 R.id.lyrics_widget_current_mono
             )
-            val nextIds = intArrayOf(
-                R.id.lyrics_widget_next_sans,
-                R.id.lyrics_widget_next_serif,
-                R.id.lyrics_widget_next_mono
-            )
-
             currentIds.forEach {
                 views.setViewVisibility(it, android.view.View.GONE)
                 views.setTextViewTextSize(
@@ -336,33 +329,11 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                     settings.fontSizeSp
                 )
             }
-            nextIds.forEach {
-                views.setViewVisibility(it, android.view.View.GONE)
-                views.setTextViewTextSize(
-                    it,
-                    android.util.TypedValue.COMPLEX_UNIT_SP,
-                    (settings.fontSizeSp * 0.63f).coerceAtLeast(10f)
-                )
-            }
-
             val currentIndex = fontIndex(settings)
             views.setViewVisibility(
                 currentIds[currentIndex],
                 android.view.View.VISIBLE
             )
-            views.setViewVisibility(
-                nextIds[currentIndex],
-                android.view.View.VISIBLE
-            )
-        }
-
-        private fun setSlideNextText(
-            views: RemoteViews,
-            text: String
-        ) {
-            views.setTextViewText(R.id.lyrics_widget_next_a_sans, text)
-            views.setTextViewText(R.id.lyrics_widget_next_a_serif, text)
-            views.setTextViewText(R.id.lyrics_widget_next_a_mono, text)
         }
 
         private fun applyAnimatedWidgetSettings(
@@ -381,12 +352,6 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                     R.id.lyrics_widget_current_b_mono
                 )
             )
-            val nextIds = intArrayOf(
-                R.id.lyrics_widget_next_sans,
-                R.id.lyrics_widget_next_serif,
-                R.id.lyrics_widget_next_mono
-            )
-
             currentIds.forEach { buffer ->
                 buffer.forEach {
                     views.setViewVisibility(it, android.view.View.GONE)
@@ -402,19 +367,6 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                 )
             }
 
-            nextIds.forEach {
-                views.setViewVisibility(it, android.view.View.GONE)
-                views.setTextViewTextSize(
-                    it,
-                    android.util.TypedValue.COMPLEX_UNIT_SP,
-                    (settings.fontSizeSp * 0.63f).coerceAtLeast(10f)
-                )
-            }
-
-            views.setViewVisibility(
-                nextIds[fontIndex(settings)],
-                android.view.View.VISIBLE
-            )
         }
 
         private fun applySlideWidgetSettings(
@@ -449,25 +401,6 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                 )
             }
 
-            val nextIds = intArrayOf(
-                R.id.lyrics_widget_next_a_sans,
-                R.id.lyrics_widget_next_a_serif,
-                R.id.lyrics_widget_next_a_mono
-            )
-
-            nextIds.forEach {
-                views.setViewVisibility(it, android.view.View.GONE)
-                views.setTextViewTextSize(
-                    it,
-                    android.util.TypedValue.COMPLEX_UNIT_SP,
-                    (settings.fontSizeSp * 0.63f).coerceAtLeast(10f)
-                )
-            }
-
-            views.setViewVisibility(
-                nextIds[fontIndex(settings)],
-                android.view.View.VISIBLE
-            )
         }
 
         private fun fontIndex(settings: LyricsWidgetSettings): Int =
@@ -494,20 +427,6 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                         R.id.lyrics_widget_title,
                         state.title.ifBlank { "Vallpaper Lyrics" }
                     )
-                    if (settings.transition != LyricsWidgetSettings.TRANSITION_SLIDE) {
-                        setTextViewText(
-                            R.id.lyrics_widget_next_sans,
-                            state.nextLine
-                        )
-                        setTextViewText(
-                            R.id.lyrics_widget_next_serif,
-                            state.nextLine
-                        )
-                        setTextViewText(
-                            R.id.lyrics_widget_next_mono,
-                            state.nextLine
-                        )
-                    }
                     setOnClickPendingIntent(
                         R.id.lyrics_widget_root,
                         openAppPendingIntent(context)
@@ -519,7 +438,6 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                     setAnimatedBufferText(views, 0, line)
                     setAnimatedBufferText(views, 1, line)
                     if (settings.transition == LyricsWidgetSettings.TRANSITION_SLIDE) {
-                        setSlideNextText(views, state.nextLine)
                         applySlideWidgetSettings(views, settings)
                     } else {
                         applyAnimatedWidgetSettings(views, settings)
