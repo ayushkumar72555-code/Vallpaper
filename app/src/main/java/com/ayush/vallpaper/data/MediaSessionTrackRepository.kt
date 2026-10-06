@@ -371,10 +371,15 @@ class MediaSessionTrackRepository(private val context: Context) : TrackRepositor
     }
 
     private fun resolveArtwork(metadata: MediaMetadata): String {
-        // Prefer the dedicated album-art metadata first. Some players,
-        // especially Spotify, may expose a different visual through the
-        // generic ART_URI. Using that first can give us a Canvas/notification
-        // image with large letterboxing instead of the square album cover.
+        // Prefer an actual bitmap supplied by the media session over a URI.
+        // Some players, including Spotify in some contexts, expose a
+        // notification/canvas image through the URI while the bitmap contains
+        // the actual artwork.
+        findArtworkBitmap(metadata)?.let { bitmap ->
+            val cached = saveArtwork(bitmap, metadata)
+            if (cached.isNotBlank()) return cached
+        }
+
         val artworkKeys = listOf(
             MediaMetadata.METADATA_KEY_ALBUM_ART_URI,
             MediaMetadata.METADATA_KEY_ART_URI,
@@ -387,7 +392,7 @@ class MediaSessionTrackRepository(private val context: Context) : TrackRepositor
                 val uri = Uri.parse(uriString)
                 val normalizedUri = copyUriToCacheIfNeeded(uri)
                 if (normalizedUri.isNotBlank()) return normalizedUri
-                Log.d(TAG, "Could not read artwork URI: ${uri}")
+                Log.d(TAG, "Could not read artwork URI: $uri")
             }
         }
 
@@ -399,10 +404,6 @@ class MediaSessionTrackRepository(private val context: Context) : TrackRepositor
         metadata.description?.iconBitmap?.let { bitmap ->
             val cached = saveArtwork(bitmap, metadata)
             if (cached.isNotBlank()) return cached
-        }
-
-        findArtworkBitmap(metadata)?.let { bitmap ->
-            return saveArtwork(bitmap, metadata)
         }
 
         Log.d(TAG, "No readable artwork found in MediaMetadata")
