@@ -115,8 +115,7 @@ class LyricsSyncEngine(
 
             if (position != null) {
                 LyricsWidgetStore.updatePosition(context, position)
-                if (position != null) {
-                    val index = lyrics.lineIndexAt(position)
+                val index = lyrics.lineIndexAt(position)
 
                 if (index != lastIndex) {
                     LyricsWidgetStore.updateCurrentIndex(context, index)
