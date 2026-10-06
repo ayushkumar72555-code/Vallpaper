@@ -33,7 +33,123 @@ class ArtworkLoader(
             Bitmap.Config.ARGB_8888
         )
 
+        return normalizeArtwork(bitmap)
+    }
+
+    /**
+     * Media apps sometimes expose a notification/canvas image instead of the
+     * actual cover. These images can contain large black bands and even a
+     * second small copy of the artwork lower down.
+     *
+     * Detect large horizontal black gaps and keep the largest real artwork
+     * band. This is intentionally conservative and only runs for portrait
+     * sources with a substantial internal black gap.
+     */
+    private fun normalizeArtwork(bitmap: Bitmap): Bitmap {
+        val width = bitmap.width
+        val height = bitmap.height
+
+        if (width <= 0 || height <= 0) return bitmap
+        if (height.toFloat() / width.toFloat() < 1.15f) return bitmap
+
+        val gap = findLargestBlackGap(bitmap)
+        if (gap != null) {
+            val (gapStart, gapEnd) = gap
+            val gapHeight = gapEnd - gapStart + 1
+            val minimumGap = (height * 0.08f).toInt()
+
+            if (gapHeight >= minimumGap) {
+                val topContentHeight = gapStart
+                val bottomContentHeight = height - gapEnd - 1
+
+                // Keep the largest contiguous content region. A notification
+                // thumbnail below a large artwork region is therefore ignored.
+                val (cropTop, cropBottom) = if (topContentHeight >= bottomContentHeight) {
+                    0 to gapStart
+                } else {
+                    (gapEnd + 1) to height
+                }
+
+                val cropHeight = cropBottom - cropTop
+                val minimumContentHeight = (height * 0.20f).toInt()
+
+                if (cropHeight >= minimumContentHeight) {
+                    return Bitmap.createBitmap(
+                        bitmap,
+                        0,
+                        cropTop,
+                        width,
+                        cropHeight
+                    )
+                }
+            }
+        }
+
         return removeBottomLetterbox(bitmap)
+    }
+
+    private fun findLargestBlackGap(bitmap: Bitmap): Pair<Int, Int>? {
+        val width = bitmap.width
+        val height = bitmap.height
+        val step = (height / 300).coerceAtLeast(1)
+        val xSamples = 48
+
+        fun rowIsBlack(y: Int): Boolean {
+            var dark = 0
+
+            for (i in 0 until xSamples) {
+                val x = ((i + 0.5f) * width / xSamples)
+                    .toInt()
+                    .coerceIn(0, width - 1)
+
+                val pixel = bitmap.getPixel(x, y)
+                val alpha = (pixel ushr 24) and 0xFF
+                val red = (pixel ushr 16) and 0xFF
+                val green = (pixel ushr 8) and 0xFF
+                val blue = pixel and 0xFF
+
+                if (alpha < 20 || (red <= 12 && green <= 12 && blue <= 12)) {
+                    dark++
+                }
+            }
+
+            return dark >= (xSamples * 0.92f).toInt()
+        }
+
+        var bestStart = -1
+        var bestEnd = -1
+        var currentStart = -1
+        var y = 0
+
+        while (y < height) {
+            if (rowIsBlack(y)) {
+                if (currentStart < 0) currentStart = y
+            } else if (currentStart >= 0) {
+                val currentEnd = y - 1
+                if (currentEnd - currentStart > bestEnd - bestStart) {
+                    bestStart = currentStart
+                    bestEnd = currentEnd
+                }
+                currentStart = -1
+            }
+            y += step
+        }
+
+        if (currentStart >= 0) {
+            val currentEnd = height - 1
+            if (currentEnd - currentStart > bestEnd - bestStart) {
+                bestStart = currentStart
+                bestEnd = currentEnd
+            }
+        }
+
+        if (bestStart < 0 || bestEnd < bestStart) return null
+
+        // Ignore black regions touching the very top or bottom. Those are
+        // normal letterboxing and are handled by removeBottomLetterbox.
+        if (bestStart == 0 || bestEnd == height - 1) return null
+
+        return bestStart to bestEnd
     }
 
     /**
@@ -44,6 +160,8 @@ class ArtworkLoader(
      * Trim only a clearly detected black tail from a substantially portrait
      * source. Normal square artwork and genuinely dark artwork are untouched.
      */
+    private fun removeBottomLetterbox(bitmap: Bitmap): Bitmap {
+
     private fun removeBottomLetterbox(bitmap: Bitmap): Bitmap {
         val width = bitmap.width
         val height = bitmap.height
