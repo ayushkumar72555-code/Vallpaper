@@ -25,7 +25,8 @@ data class LyricsWidgetState(
     val currentLine: String = "",
     val previousLine: String = "",
     val nextLine: String = "",
-    val currentIndex: Int = -1
+    val currentIndex: Int = -1,
+    val playbackStatus: String = "WAITING"
 )
 
 object LyricsWidgetStore {
@@ -36,6 +37,7 @@ object LyricsWidgetStore {
     private val linesKey = stringPreferencesKey("lines")
     private val currentIndexKey = intPreferencesKey("current_index")
     private val updatedAtKey = longPreferencesKey("updated_at")
+    private val playbackStatusKey = stringPreferencesKey("playback_status")
 
     suspend fun saveLyrics(
         context: Context,
@@ -60,6 +62,7 @@ object LyricsWidgetStore {
             preferences[artistKey] = artist
             preferences[linesKey] = json
             preferences[currentIndexKey] = -1
+            preferences[playbackStatusKey] = "WAITING"
             preferences[updatedAtKey] = System.currentTimeMillis()
         }
     }
@@ -71,6 +74,13 @@ object LyricsWidgetStore {
     suspend fun updateCurrentIndex(context: Context, index: Int) {
         context.lyricsWidgetDataStore.edit { preferences ->
             preferences[currentIndexKey] = index
+            preferences[updatedAtKey] = System.currentTimeMillis()
+        }
+    }
+
+    suspend fun updatePlaybackStatus(context: Context, status: String) {
+        context.lyricsWidgetDataStore.edit { preferences ->
+            preferences[playbackStatusKey] = status
             preferences[updatedAtKey] = System.currentTimeMillis()
         }
     }
@@ -95,7 +105,8 @@ object LyricsWidgetStore {
             currentLine = lines.getOrNull(index)?.text.orEmpty(),
             previousLine = lines.getOrNull(index - 1)?.text.orEmpty(),
             nextLine = lines.getOrNull(index + 1)?.text.orEmpty(),
-            currentIndex = index
+            currentIndex = index,
+            playbackStatus = preferences[playbackStatusKey] ?: "WAITING"
         )
     }
 
