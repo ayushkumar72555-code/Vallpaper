@@ -339,6 +339,10 @@ class MediaSessionTrackRepository(private val context: Context) : TrackRepositor
         }
     }
 
+    fun currentPlaybackState(): Int? {
+        return currentController?.playbackState?.state
+    }
+
     fun currentPlaybackPositionMs(): Long? {
         val controller = currentController ?: return null
         val state = controller.playbackState ?: return null
