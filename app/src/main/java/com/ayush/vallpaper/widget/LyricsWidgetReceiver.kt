@@ -86,10 +86,6 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                 )
                 setTextViewText(R.id.lyrics_widget_artist, state.artist)
                 setTextViewText(
-                    R.id.lyrics_widget_previous,
-                    state.previousLine.ifBlank { " " }
-                )
-                setTextViewText(
                     R.id.lyrics_widget_current,
                     state.currentLine.ifBlank { "Lyrics unavailable" }
                 )
@@ -122,10 +118,6 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                 context.packageName,
                 R.layout.lyrics_widget_layout
             ).apply {
-                setTextViewText(
-                    R.id.lyrics_widget_previous,
-                    state.previousLine.ifBlank { " " }
-                )
                 setTextViewText(
                     R.id.lyrics_widget_current,
                     state.currentLine.ifBlank { "Lyrics unavailable" }
