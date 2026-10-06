@@ -246,9 +246,13 @@ class MediaSessionTrackRepository(private val context: Context) : TrackRepositor
     }
 
     private fun resolveArtwork(metadata: MediaMetadata): String {
+        // Prefer the dedicated album-art metadata first. Some players,
+        // especially Spotify, may expose a different visual through the
+        // generic ART_URI. Using that first can give us a Canvas/notification
+        // image with large letterboxing instead of the square album cover.
         val artworkKeys = listOf(
-            MediaMetadata.METADATA_KEY_ART_URI,
             MediaMetadata.METADATA_KEY_ALBUM_ART_URI,
+            MediaMetadata.METADATA_KEY_ART_URI,
             MediaMetadata.METADATA_KEY_DISPLAY_ICON_URI
         )
 
