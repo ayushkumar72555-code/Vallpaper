@@ -22,6 +22,7 @@ data class LyricsWidgetState(
     val trackId: String = "",
     val title: String = "",
     val artist: String = "",
+    val artworkUrl: String = "",
     val currentLine: String = "",
     val previousLine: String = "",
     val nextLine: String = "",
@@ -34,6 +35,7 @@ object LyricsWidgetStore {
     private val trackIdKey = stringPreferencesKey("track_id")
     private val titleKey = stringPreferencesKey("title")
     private val artistKey = stringPreferencesKey("artist")
+    private val artworkUrlKey = stringPreferencesKey("artwork_url")
     private val linesKey = stringPreferencesKey("lines")
     private val currentIndexKey = intPreferencesKey("current_index")
     private val updatedAtKey = longPreferencesKey("updated_at")
@@ -44,6 +46,7 @@ object LyricsWidgetStore {
         trackId: String,
         title: String,
         artist: String,
+        artworkUrl: String,
         lyrics: Lyrics
     ) {
         val json = JSONArray().apply {
@@ -60,6 +63,7 @@ object LyricsWidgetStore {
             preferences[trackIdKey] = trackId
             preferences[titleKey] = title
             preferences[artistKey] = artist
+            preferences[artworkUrlKey] = artworkUrl
             preferences[linesKey] = json
             preferences[currentIndexKey] = -1
             preferences[playbackStatusKey] = "WAITING"
@@ -102,6 +106,7 @@ object LyricsWidgetStore {
             trackId = preferences[trackIdKey].orEmpty(),
             title = preferences[titleKey].orEmpty(),
             artist = preferences[artistKey].orEmpty(),
+            artworkUrl = preferences[artworkUrlKey].orEmpty(),
             currentLine = when {
                 index >= 0 -> lines.getOrNull(index)?.text.orEmpty()
                 lines.isNotEmpty() -> "[Instrumental]"
