@@ -18,6 +18,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -89,20 +90,30 @@ class VallpaperApplication : Application() {
                         return@collectLatest
                     }
 
-                    val track = request.track
-                    if (track == null) {
+                    val initialTrack = request.track
+                    if (initialTrack == null) {
                         _automaticWallpaperStatus.value =
                             AutomaticWallpaperStatus.WAITING_FOR_MUSIC
                         return@collectLatest
                     }
 
-                    if (track.artworkUrl.isBlank()) {
+                    // When the phone is locked, media players often publish
+                    // the new metadata before their artwork provider is ready.
+                    // Keep checking the repository briefly instead of giving
+                    // up after the first metadata callback.
+                    val track = awaitTrackWithArtwork(initialTrack)
+                    if (track == null) {
                         _automaticWallpaperStatus.value =
                             AutomaticWallpaperStatus.WAITING_FOR_ARTWORK
                         return@collectLatest
                     }
 
-                    if (request.key == lastSuccessfulRequestKey) {
+                    val resolvedRequestKey = AutomaticWallpaperRequest(
+                        track = track,
+                        settings = request.settings
+                    ).key
+
+                    if (resolvedRequestKey == lastSuccessfulRequestKey) {
                         _automaticWallpaperStatus.value =
                             AutomaticWallpaperStatus.APPLIED
                         return@collectLatest
@@ -111,10 +122,31 @@ class VallpaperApplication : Application() {
                     updateWallpaperAutomatically(
                         track = track,
                         settings = request.settings,
-                        requestKey = request.key
+                        requestKey = resolvedRequestKey
                     )
                 }
         }
+    }
+
+    private suspend fun awaitTrackWithArtwork(initialTrack: Track): Track? {
+        var candidate = initialTrack
+
+        repeat(8) { attempt ->
+            if (candidate.artworkUrl.isNotBlank()) {
+                return candidate
+            }
+
+            // Ask the media-session repository to read the player's current
+            // state again. This is especially useful while the screen is off,
+            // when metadata and artwork can arrive in separate callbacks.
+            trackRepository.refresh()
+
+            delay(300L + (attempt * 150L))
+
+            candidate = trackRepository.currentTrack.value ?: candidate
+        }
+
+        return candidate.takeIf { it.artworkUrl.isNotBlank() }
     }
 
     private suspend fun updateWallpaperAutomatically(
