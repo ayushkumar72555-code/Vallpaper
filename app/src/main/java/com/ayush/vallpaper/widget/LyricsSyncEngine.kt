@@ -101,6 +101,7 @@ class LyricsSyncEngine(
             val position = trackRepository.currentPlaybackPositionMs()
             val playbackState = trackRepository.currentPlaybackState()
             val status = statusLabel(playbackState)
+            val now = android.os.SystemClock.elapsedRealtime()
 
             if (status != lastStatus) {
                 LyricsWidgetStore.updatePlaybackStatus(context, status)
@@ -143,7 +144,7 @@ class LyricsSyncEngine(
             val nextTimestamp = position?.let(lyrics::nextTimestampAfter)
             val delayMs = if (
                 position != null &&
-                isPlayingState(playbackState) &&
+                isPlayingState(playbackState ?: PlaybackState.STATE_NONE) &&
                 nextTimestamp != null
             ) {
                 val remaining = nextTimestamp - position
