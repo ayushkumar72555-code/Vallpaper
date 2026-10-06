@@ -62,11 +62,11 @@ class LyricsSyncEngine(
     }
 
     private suspend fun syncTrack(track: Track) {
-        Log.d(TAG, "Loading lyrics: \${track.title} - \${track.artist}")
+        Log.d(TAG, "Loading lyrics: ${track.title} - ${track.artist}")
 
         val lyrics = lyricsRepository.findLyrics(track)
         if (lyrics == null) {
-            Log.d(TAG, "No synced lyrics: \${track.title}")
+            Log.d(TAG, "No synced lyrics: ${track.title}")
             LyricsWidgetStore.clear(context)
             LyricsWidgetReceiver.updateFull(
                 context,
@@ -120,8 +120,8 @@ class LyricsSyncEngine(
 
                     Log.d(
                         TAG,
-                        "LYRIC index=\$index position=\${position}ms " +
-                            "status=\$status text=\${state.currentLine}"
+                        "LYRIC index=\$index position=${position}ms " +
+                            "status=\$status text=${state.currentLine}"
                     )
 
                     lastIndex = index
@@ -132,12 +132,12 @@ class LyricsSyncEngine(
             if (now - lastLogAt >= 1_000L) {
                 Log.d(
                     TAG,
-                    "CLOCK track=\${track.title} " +
-                        "raw=\${snapshot?.positionMs}ms " +
-                        "projected=\${position}ms " +
-                        "speed=\${snapshot?.playbackSpeed} " +
-                        "state=\${snapshot?.state} " +
-                        "lastUpdate=\${snapshot?.lastPositionUpdateTime}"
+                    "CLOCK track=${track.title} " +
+                        "raw=${snapshot?.positionMs}ms " +
+                        "projected=${position}ms " +
+                        "speed=${snapshot?.playbackSpeed} " +
+                        "state=${snapshot?.state} " +
+                        "lastUpdate=${snapshot?.lastPositionUpdateTime}"
                 )
                 lastLogAt = now
             }
