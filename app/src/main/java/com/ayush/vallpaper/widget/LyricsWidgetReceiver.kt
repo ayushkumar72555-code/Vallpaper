@@ -29,9 +29,11 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
         val settings = LyricsWidgetSettingsRepository(context).read()
         val initial = createViews(context, settings).apply {
             setTextViewText(R.id.lyrics_widget_title, "Nothing playing")
-            setTextViewText(R.id.lyrics_widget_next_sans, "")
-            setTextViewText(R.id.lyrics_widget_next_serif, "")
-            setTextViewText(R.id.lyrics_widget_next_mono, "")
+            if (settings.transition != LyricsWidgetSettings.TRANSITION_SLIDE) {
+                setTextViewText(R.id.lyrics_widget_next_sans, "")
+                setTextViewText(R.id.lyrics_widget_next_serif, "")
+                setTextViewText(R.id.lyrics_widget_next_mono, "")
+            }
             setOnClickPendingIntent(
                 R.id.lyrics_widget_root,
                 openAppPendingIntent(context)
@@ -98,18 +100,20 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                     R.id.lyrics_widget_title,
                     state.title.ifBlank { "Vallpaper Lyrics" }
                 )
-                setTextViewText(
-                    R.id.lyrics_widget_next_sans,
-                    state.nextLine.ifBlank { " " }
-                )
-                setTextViewText(
-                    R.id.lyrics_widget_next_serif,
-                    state.nextLine.ifBlank { " " }
-                )
-                setTextViewText(
-                    R.id.lyrics_widget_next_mono,
-                    state.nextLine.ifBlank { " " }
-                )
+                if (settings.transition != LyricsWidgetSettings.TRANSITION_SLIDE) {
+                    setTextViewText(
+                        R.id.lyrics_widget_next_sans,
+                        state.nextLine.ifBlank { " " }
+                    )
+                    setTextViewText(
+                        R.id.lyrics_widget_next_serif,
+                        state.nextLine.ifBlank { " " }
+                    )
+                    setTextViewText(
+                        R.id.lyrics_widget_next_mono,
+                        state.nextLine.ifBlank { " " }
+                    )
+                }
                 setOnClickPendingIntent(
                     R.id.lyrics_widget_root,
                     openAppPendingIntent(context)
@@ -149,18 +153,20 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
 
             val settings = LyricsWidgetSettingsRepository(context).read()
             val views = createViews(context, settings).apply {
-                setTextViewText(
-                    R.id.lyrics_widget_next_sans,
-                    state.nextLine.ifBlank { " " }
-                )
-                setTextViewText(
-                    R.id.lyrics_widget_next_serif,
-                    state.nextLine.ifBlank { " " }
-                )
-                setTextViewText(
-                    R.id.lyrics_widget_next_mono,
-                    state.nextLine.ifBlank { " " }
-                )
+                if (settings.transition != LyricsWidgetSettings.TRANSITION_SLIDE) {
+                    setTextViewText(
+                        R.id.lyrics_widget_next_sans,
+                        state.nextLine.ifBlank { " " }
+                    )
+                    setTextViewText(
+                        R.id.lyrics_widget_next_serif,
+                        state.nextLine.ifBlank { " " }
+                    )
+                    setTextViewText(
+                        R.id.lyrics_widget_next_mono,
+                        state.nextLine.ifBlank { " " }
+                    )
+                }
             }
 
             if (isAnimated(settings)) {
@@ -446,18 +452,20 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                         R.id.lyrics_widget_title,
                         state.title.ifBlank { "Vallpaper Lyrics" }
                     )
-                    setTextViewText(
-                        R.id.lyrics_widget_next_sans,
-                        state.nextLine
-                    )
-                    setTextViewText(
-                        R.id.lyrics_widget_next_serif,
-                        state.nextLine
-                    )
-                    setTextViewText(
-                        R.id.lyrics_widget_next_mono,
-                        state.nextLine
-                    )
+                    if (settings.transition != LyricsWidgetSettings.TRANSITION_SLIDE) {
+                        setTextViewText(
+                            R.id.lyrics_widget_next_sans,
+                            state.nextLine
+                        )
+                        setTextViewText(
+                            R.id.lyrics_widget_next_serif,
+                            state.nextLine
+                        )
+                        setTextViewText(
+                            R.id.lyrics_widget_next_mono,
+                            state.nextLine
+                        )
+                    }
                     setOnClickPendingIntent(
                         R.id.lyrics_widget_root,
                         openAppPendingIntent(context)
