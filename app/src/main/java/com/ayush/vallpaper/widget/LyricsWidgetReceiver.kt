@@ -253,10 +253,11 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
 
             views.setTextColor(R.id.lyrics_widget_title, lyricColor)
             views.setTextColor(R.id.lyrics_widget_artist, lyricColor)
-            views.setTextColor(R.id.lyrics_widget_progress, lyricColor)
-            views.setTextColor(R.id.lyrics_widget_previous, lyricColor)
-            views.setTextColor(R.id.lyrics_widget_play_pause, lyricColor)
-            views.setTextColor(R.id.lyrics_widget_next, lyricColor)
+            views.setInt(R.id.lyrics_widget_progress, "setProgressTint", lyricColor)
+            views.setInt(R.id.lyrics_widget_progress, "setThumbTint", lyricColor)
+            views.setInt(R.id.lyrics_widget_previous, "setColorFilter", lyricColor)
+            views.setInt(R.id.lyrics_widget_play_pause, "setColorFilter", lyricColor)
+            views.setInt(R.id.lyrics_widget_next, "setColorFilter", lyricColor)
 
             if (settings.transition == LyricsWidgetSettings.TRANSITION_NONE) {
                 intArrayOf(
@@ -333,10 +334,11 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                 runCatching {
                     val uri = Uri.parse(state.artworkUrl)
                     context.contentResolver.openInputStream(uri)?.use { input ->
-                        BitmapFactory.decodeStream(input)
-                    }?.let { bitmap ->
-                        views.setImageViewBitmap(R.id.lyrics_widget_artwork, bitmap)
-                    }
+                        BitmapFactory.decodeStream(input)?.let { bitmap ->
+                            val scaled = Bitmap.createScaledBitmap(bitmap, 116, 116, true)
+                            if (scaled !== bitmap) bitmap.recycle()
+                            views.setImageViewBitmap(R.id.lyrics_widget_artwork, scaled)
+                        }
                 }
             }
         }
@@ -385,21 +387,36 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
             if (ids.isEmpty()) return
 
             val settings = LyricsWidgetSettingsRepository(context).read()
-            val state = runCatching {
-                kotlinx.coroutines.runBlocking { LyricsWidgetStore.read(context) }
-            }.getOrNull() ?: return
+            if (!settings.showSongName) return
 
-            val views = createViews(context, settings)
-            applyCommonAppearance(views, settings)
-            setSongInfo(context, views, state.copy(
-                positionMs = positionMs,
-                durationMs = durationMs,
-                playbackStatus = when (playbackState) {
-                    android.media.session.PlaybackState.STATE_PLAYING -> "PLAYING"
-                    android.media.session.PlaybackState.STATE_PAUSED -> "PAUSED"
-                    else -> state.playbackStatus
+            val views = RemoteViews(context.packageName, when (settings.transition) {
+                LyricsWidgetSettings.TRANSITION_FADE -> R.layout.lyrics_widget_layout_fade
+                LyricsWidgetSettings.TRANSITION_SLIDE -> R.layout.lyrics_widget_layout_slide
+                else -> R.layout.lyrics_widget_layout
+            })
+            val progress = positionMs.coerceAtLeast(0L)
+                .coerceAtMost(durationMs.coerceAtLeast(0L))
+                .coerceAtMost(Int.MAX_VALUE.toLong())
+                .toInt()
+            val max = durationMs.coerceAtLeast(0L).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
+            views.setProgressBar(R.id.lyrics_widget_progress, max, progress, max <= 0)
+            views.setImageViewResource(
+                R.id.lyrics_widget_play_pause,
+                if (playbackState == android.media.session.PlaybackState.STATE_PLAYING) {
+                    android.R.drawable.ic_media_pause
+                } else {
+                    android.R.drawable.ic_media_play
                 }
-            ), settings)
+            )
+            views.setOnClickPendingIntent(R.id.lyrics_widget_previous, actionPendingIntent(context, ACTION_PREVIOUS, 2001))
+            views.setOnClickPendingIntent(R.id.lyrics_widget_play_pause, actionPendingIntent(context, ACTION_PLAY_PAUSE, 2002))
+            views.setOnClickPendingIntent(R.id.lyrics_widget_next, actionPendingIntent(context, ACTION_NEXT, 2003))
+            val lyricColor = parseColor(settings.lyricColorHex, android.graphics.Color.WHITE)
+            views.setInt(R.id.lyrics_widget_progress, "setProgressTint", lyricColor)
+            views.setInt(R.id.lyrics_widget_progress, "setThumbTint", lyricColor)
+            views.setInt(R.id.lyrics_widget_previous, "setColorFilter", lyricColor)
+            views.setInt(R.id.lyrics_widget_play_pause, "setColorFilter", lyricColor)
+            views.setInt(R.id.lyrics_widget_next, "setColorFilter", lyricColor)
             manager.partiallyUpdateAppWidget(ids, views)
         }
 
