@@ -102,9 +102,21 @@ object LyricsWidgetStore {
             trackId = preferences[trackIdKey].orEmpty(),
             title = preferences[titleKey].orEmpty(),
             artist = preferences[artistKey].orEmpty(),
-            currentLine = lines.getOrNull(index)?.text.orEmpty(),
-            previousLine = lines.getOrNull(index - 1)?.text.orEmpty(),
-            nextLine = lines.getOrNull(index + 1)?.text.orEmpty(),
+            currentLine = when {
+                index >= 0 -> lines.getOrNull(index)?.text.orEmpty()
+                lines.isNotEmpty() -> "[Instrumental]"
+                else -> ""
+            },
+            previousLine = if (index > 0) {
+                lines.getOrNull(index - 1)?.text.orEmpty()
+            } else {
+                ""
+            },
+            nextLine = when {
+                index >= 0 -> lines.getOrNull(index + 1)?.text.orEmpty()
+                lines.isNotEmpty() -> lines.first().text
+                else -> ""
+            },
             currentIndex = index,
             playbackStatus = preferences[playbackStatusKey] ?: "WAITING"
         )
