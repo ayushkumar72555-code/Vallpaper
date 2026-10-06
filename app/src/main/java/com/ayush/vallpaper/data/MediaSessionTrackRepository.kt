@@ -376,7 +376,10 @@ class MediaSessionTrackRepository(private val context: Context) : TrackRepositor
             title = title,
             artist = artist,
             album = album,
-            artworkUrl = resolveArtwork(metadata)
+            artworkUrl = resolveArtwork(metadata),
+            durationMs = metadata
+                .getLong(MediaMetadata.METADATA_KEY_DURATION)
+                .coerceAtLeast(0L)
         )
     }
 
