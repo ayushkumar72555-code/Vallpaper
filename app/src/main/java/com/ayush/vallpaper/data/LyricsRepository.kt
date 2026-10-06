@@ -314,16 +314,16 @@ class LyricsRepository {
         var normalized = normalizeGeneral(value)
 
         listOf(
-            Regex("""\\b(official\\s+music\\s+video|official\\s+video|official\\s+audio)\\b"""),
-            Regex("""\\b(music\\s+video|lyric\\s+video|lyrics\\s+video)\\b"""),
-            Regex("""\\b(remastered|remaster|remix|edit|version|live|acoustic)\\b"""),
-            Regex("""\\b(slowed\\s*(\\+|and)?\\s*reverb|sped\\s*up|speed\\s*up|nightcore)\\b""")
+            Regex("""\b(official\s+music\s+video|official\s+video|official\s+audio)\b"""),
+            Regex("""\b(music\s+video|lyric\s+video|lyrics\s+video)\b"""),
+            Regex("""\b(remastered|remaster|remix|edit|version|live|acoustic)\b"""),
+            Regex("""\b(slowed\s*(\+|and)?\s*reverb|sped\s*up|speed\s*up|nightcore)\b""")
         ).forEach { pattern ->
             normalized = normalized.replace(pattern, " ")
         }
 
         normalized = normalized.replace(
-            Regex("""\\s+(feat|ft)\\s+[a-z0-9 ]+$"""),
+            Regex("""\s+(feat|ft)\s+[a-z0-9 ]+$"""),
             " "
         )
 
@@ -333,20 +333,20 @@ class LyricsRepository {
     private fun normalizeArtist(value: String): String =
         collapseSpaces(
             normalizeGeneral(value)
-                .replace(Regex("""\\b(feat|ft)\\b"""), " ")
-                .replace(Regex("""\\b(official|music|video|audio)\\b"""), " ")
+                .replace(Regex("""\b(feat|ft)\b"""), " ")
+                .replace(Regex("""\b(official|music|video|audio)\b"""), " ")
         )
 
     private fun normalizeGeneral(value: String): String =
         value.lowercase(Locale.US)
             .replace("&", " and ")
             .replace("’", "'")
-            .replace(Regex("""[\\[\\](){ }]"""), " ")
+            .replace(Regex("""[\[\](){}]"""), " ")
             .replace(Regex("""[^a-z0-9]+"""), " ")
             .trim()
 
     private fun collapseSpaces(value: String): String =
-        value.replace(Regex("""\\s+"""), " ").trim()
+        value.replace(Regex("""\s+"""), " ").trim()
 
     private fun parseLrc(lrc: String): List<LyricLine> {
         val timePattern = Regex("""\[(\d{1,3}):(\d{2})(?:[.:](\d{1,3}))?\]""")
