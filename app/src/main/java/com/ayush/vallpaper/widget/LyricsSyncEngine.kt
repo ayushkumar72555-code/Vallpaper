@@ -82,6 +82,7 @@ class LyricsSyncEngine(
             title = track.title,
             artist = track.artist,
             artworkUrl = track.artworkUrl,
+            durationMs = track.durationMs,
             lyrics = lyrics
         )
 
@@ -113,7 +114,9 @@ class LyricsSyncEngine(
             }
 
             if (position != null) {
-                val index = lyrics.lineIndexAt(position)
+                LyricsWidgetStore.updatePosition(context, position)
+                if (position != null) {
+                    val index = lyrics.lineIndexAt(position)
 
                 if (index != lastIndex) {
                     LyricsWidgetStore.updateCurrentIndex(context, index)
@@ -130,6 +133,13 @@ class LyricsSyncEngine(
                     lastIndex = index
                 }
             }
+
+            LyricsWidgetReceiver.updatePlayback(
+                context,
+                positionMs = position ?: 0L,
+                durationMs = track.durationMs,
+                playbackState = playbackState ?: PlaybackState.STATE_NONE
+            )
 
             if (now - lastLogAt >= 1_000L) {
                 Log.d(
