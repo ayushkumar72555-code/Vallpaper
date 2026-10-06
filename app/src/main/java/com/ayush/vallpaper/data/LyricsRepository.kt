@@ -12,6 +12,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
 import java.util.concurrent.ConcurrentHashMap
+import java.util.Locale
 
 class LyricsRepository {
 
@@ -128,22 +129,31 @@ class LyricsRepository {
 
         val title = item.optString("trackName")
         val artist = item.optString("artistName")
+        val album = item.optString("albumName")
+        val durationSeconds = item.optDouble("duration", 0.0)
 
-        if (normalize(title) != normalize(track.title) ||
-            normalize(artist) != normalize(track.artist)
-        ) {
+        val score = matchScore(
+            track = track,
+            title = title,
+            artist = artist,
+            album = album,
+            durationSeconds = durationSeconds
+        )
+
+        if (score < 0.82) {
+            Log.d(TAG, "Rejected exact lyrics match for " + track.title + ", score=" + score)
             return null
         }
 
-        val lines = parseLrc(synced)
-        return lines.takeIf { it.isNotEmpty() }?.let {
+        return parseLrc(synced).takeIf { it.isNotEmpty() }?.let {
             Lyrics(lines = it, source = "LRCLIB")
         }
     }
 
     private fun selectBestResult(results: JSONArray, track: Track): Lyrics? {
         var best: Lyrics? = null
-        var bestScore = Int.MIN_VALUE
+        var bestScore = 0.0
+        var bestTitle = ""
 
         for (index in 0 until results.length()) {
             val item = results.optJSONObject(index) ?: continue
@@ -153,21 +163,190 @@ class LyricsRepository {
             val title = item.optString("trackName")
             val artist = item.optString("artistName")
             val album = item.optString("albumName")
+            val durationSeconds = item.optDouble("duration", 0.0)
 
-            var score = 0
-            if (normalize(title) == normalize(track.title)) score += 4
-            if (normalize(artist) == normalize(track.artist)) score += 4
-            if (album.isNotBlank() && normalize(album) == normalize(track.album)) score += 2
+            val score = matchScore(
+                track = track,
+                title = title,
+                artist = artist,
+                album = album,
+                durationSeconds = durationSeconds
+            )
+
+            if (score <= bestScore) continue
 
             val lines = parseLrc(synced)
-            if (lines.isNotEmpty() && score > bestScore) {
-                best = Lyrics(lines = lines, source = "LRCLIB")
-                bestScore = score
-            }
+            if (lines.isEmpty()) continue
+
+            best = Lyrics(lines = lines, source = "LRCLIB")
+            bestScore = score
+            bestTitle = title
         }
+
+        if (best == null || bestScore < 0.80) {
+            Log.d(
+                TAG,
+                "No reliable lyrics match for " + track.title +
+                    ", bestScore=" + bestScore +
+                    ", candidate=" + bestTitle
+            )
+            return null
+        }
+
+        Log.d(
+            TAG,
+            "Lyrics match: " + track.title +
+                " -> " + bestTitle +
+                ", score=" + bestScore
+        )
 
         return best
     }
+
+    private fun matchScore(
+        track: Track,
+        title: String,
+        artist: String,
+        album: String,
+        durationSeconds: Double
+    ): Double {
+        val titleScore = similarity(
+            normalizeTitle(track.title),
+            normalizeTitle(title)
+        )
+        val artistScore = similarity(
+            normalizeArtist(track.artist),
+            normalizeArtist(artist)
+        )
+
+        val albumScore =
+            if (
+                track.album.isNotBlank() &&
+                track.album != "Unknown album" &&
+                album.isNotBlank()
+            ) {
+                similarity(
+                    normalizeGeneral(track.album),
+                    normalizeGeneral(album)
+                )
+            } else {
+                0.5
+            }
+
+        var score =
+            titleScore * 0.50 +
+                artistScore * 0.40 +
+                albumScore * 0.10
+
+        if (track.durationMs > 0L && durationSeconds > 0.0) {
+            val difference =
+                kotlin.math.abs(track.durationMs / 1000.0 - durationSeconds)
+
+            score = minOf(
+                1.0,
+                score + when {
+                    difference <= 2.0 -> 0.08
+                    difference <= 5.0 -> 0.04
+                    difference <= 10.0 -> 0.01
+                    else -> 0.0
+                }
+            )
+        }
+
+        return score
+    }
+
+    private fun similarity(left: String, right: String): Double {
+        if (left.isBlank() || right.isBlank()) return 0.0
+        if (left == right) return 1.0
+
+        val leftTokens = left.split(' ').filter { it.isNotBlank() }.toSet()
+        val rightTokens = right.split(' ').filter { it.isNotBlank() }.toSet()
+
+        if (leftTokens.isNotEmpty() && rightTokens.isNotEmpty()) {
+            val intersection = leftTokens.intersect(rightTokens).size.toDouble()
+            val union = leftTokens.union(rightTokens).size.toDouble()
+
+            if (union > 0.0 && intersection > 0.0) {
+                val jaccard = intersection / union
+                if (jaccard >= 0.75) return maxOf(jaccard, 0.85)
+            }
+        }
+
+        val distance = levenshteinDistance(left, right)
+        val longest = maxOf(left.length, right.length)
+
+        return if (longest == 0) {
+            1.0
+        } else {
+            1.0 - distance.toDouble() / longest.toDouble()
+        }
+    }
+
+    private fun levenshteinDistance(left: String, right: String): Int {
+        if (left == right) return 0
+        if (left.isEmpty()) return right.length
+        if (right.isEmpty()) return left.length
+
+        var previous = IntArray(right.length + 1) { it }
+
+        for (i in left.indices) {
+            val current = IntArray(right.length + 1)
+            current[0] = i + 1
+
+            for (j in right.indices) {
+                val cost = if (left[i] == right[j]) 0 else 1
+
+                current[j + 1] = minOf(
+                    current[j] + 1,
+                    previous[j + 1] + 1,
+                    previous[j] + cost
+                )
+            }
+
+            previous = current
+        }
+
+        return previous[right.length]
+    }
+
+    private fun normalizeTitle(value: String): String {
+        var normalized = normalizeGeneral(value)
+
+        listOf(
+            Regex("""\\b(official\\s+music\\s+video|official\\s+video|official\\s+audio)\\b"""),
+            Regex("""\\b(music\\s+video|lyric\\s+video|lyrics\\s+video)\\b"""),
+            Regex("""\\b(remastered|remaster|remix|edit|version|live|acoustic)\\b"""),
+            Regex("""\\b(slowed\\s*(\\+|and)?\\s*reverb|sped\\s*up|speed\\s*up|nightcore)\\b""")
+        ).forEach { pattern ->
+            normalized = normalized.replace(pattern, " ")
+        }
+
+        normalized = normalized.replace(
+            Regex("""\\s+(feat|ft)\\s+[a-z0-9 ]+$"""),
+            " "
+        )
+
+        return collapseSpaces(normalized)
+    }
+
+    private fun normalizeArtist(value: String): String =
+        collapseSpaces(
+            normalizeGeneral(value)
+                .replace(Regex("""\\b(feat|ft)\\b"""), " ")
+                .replace(Regex("""\\b(official|music|video|audio)\\b"""), " ")
+        )
+
+    private fun normalizeGeneral(value: String): String =
+        value.lowercase(Locale.US)
+            .replace("&", " and ")
+            .replace("’", "'")
+            .replace(Regex("""[\\[\\](){ }]"""), " ")
+            .replace(Regex("""[^a-z0-9]+"""), " ")
+            .trim()
+
+    private fun collapseSpaces(value: String): String =
+        value.replace(Regex("""\\s+"""), " ").trim()
 
     private fun parseLrc(lrc: String): List<LyricLine> {
         val timePattern = Regex("""\[(\d{1,3}):(\d{2})(?:[.:](\d{1,3}))?\]""")
