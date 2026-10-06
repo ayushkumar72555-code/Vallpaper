@@ -37,58 +37,83 @@
             android:maxLines="1" />
     </LinearLayout>
 
-    <TextView
-        android:id="@+id/lyrics_widget_title"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:layout_marginTop="8dp"
-        android:textColor="#F5F5F5"
-        android:textSize="13sp"
-        android:textStyle="bold"
-        android:maxLines="1"
-        android:ellipsize="end" />
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
 
-    <TextView
-        android:id="@+id/lyrics_widget_artist"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:textColor="#8F8F8F"
-        android:textSize="10sp"
-        android:maxLines="1"
-        android:ellipsize="end" />
+        <ImageView
+            android:id="@+id/lyrics_widget_artwork"
+            android:layout_width="68dp"
+            android:layout_height="68dp"
+            android:layout_marginEnd="12dp"
+            android:scaleType="centerCrop"
+            android:contentDescription="Album artwork" />
 
-    <TextView
-        android:id="@+id/lyrics_widget_previous"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:gravity="center"
-        android:textColor="#8F8F8F"
-        android:textSize="11sp"
-        android:maxLines="1"
-        android:ellipsize="end" />
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center_vertical">
 
-    <TextView
-        android:id="@+id/lyrics_widget_current"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingTop="4dp"
-        android:paddingBottom="4dp"
-        android:gravity="center"
-        android:textColor="#FF7A00"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:maxLines="2"
-        android:ellipsize="end" />
+            <TextView
+                android:id="@+id/lyrics_widget_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="#F5F5F5"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:maxLines="1"
+                android:ellipsize="end" />
 
-    <TextView
-        android:id="@+id/lyrics_widget_next"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:textColor="#8F8F8F"
-        android:textSize="11sp"
-        android:maxLines="1"
-        android:ellipsize="end" />
+            <TextView
+                android:id="@+id/lyrics_widget_artist"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="#8F8F8F"
+                android:textSize="10sp"
+                android:maxLines="1"
+                android:ellipsize="end" />
 
+            <TextView
+                android:id="@+id/lyrics_widget_previous"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="7dp"
+                android:gravity="center"
+                android:textColor="#777777"
+                android:textSize="10sp"
+                android:maxLines="1"
+                android:ellipsize="end" />
+
+            <TextView
+                android:id="@+id/lyrics_widget_current"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
+                android:gravity="center"
+                android:textColor="#FF7A00"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:maxLines="2"
+                android:ellipsize="end" />
+
+            <TextView
+                android:id="@+id/lyrics_widget_next"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:textColor="#777777"
+                android:textSize="10sp"
+                android:maxLines="1"
+                android:ellipsize="end" />
+
+        </LinearLayout>
+
+    </LinearLayout>
 </LinearLayout>
