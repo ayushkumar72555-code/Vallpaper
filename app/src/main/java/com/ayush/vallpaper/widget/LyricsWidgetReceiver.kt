@@ -6,10 +6,13 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.os.Handler
+import android.os.Looper
 import android.widget.RemoteViews
 import com.ayush.vallpaper.MainActivity
 import com.ayush.vallpaper.VallpaperApplication
 import com.ayush.vallpaper.R
+import java.util.concurrent.atomic.AtomicInteger
 
 class LyricsWidgetReceiver : AppWidgetProvider() {
 
@@ -59,6 +62,9 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
 
     companion object {
 
+        private val transitionHandler = Handler(Looper.getMainLooper())
+        private val transitionToken = AtomicInteger(0)
+
         fun updateFull(context: Context, state: LyricsWidgetState) {
             val manager = AppWidgetManager.getInstance(context)
             val ids = manager.getAppWidgetIds(
@@ -100,6 +106,8 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
             )
             if (ids.isEmpty()) return
 
+            val settings = LyricsWidgetSettingsRepository(context).read()
+            val token = transitionToken.incrementAndGet()
             val views = RemoteViews(
                 context.packageName,
                 R.layout.lyrics_widget_layout
@@ -113,10 +121,36 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                 setTextViewText(R.id.lyrics_widget_next_sans, state.nextLine.ifBlank { " " })
                 setTextViewText(R.id.lyrics_widget_next_serif, state.nextLine.ifBlank { " " })
                 setTextViewText(R.id.lyrics_widget_next_mono, state.nextLine.ifBlank { " " })
-                applyWidgetSettings(this, LyricsWidgetSettingsRepository(context).read())
+                applyWidgetSettings(this, settings)
+
+                when (settings.transition) {
+                    LyricsWidgetSettings.TRANSITION_FADE ->
+                        setFloat(R.id.lyrics_widget_current_container, "setAlpha", 0f)
+                    LyricsWidgetSettings.TRANSITION_SLIDE ->
+                        setFloat(R.id.lyrics_widget_current_container, "setTranslationY", -8f)
+                }
             }
 
             manager.partiallyUpdateAppWidget(ids, views)
+
+            if (settings.transition != LyricsWidgetSettings.TRANSITION_NONE) {
+                transitionHandler.postDelayed({
+                    if (transitionToken.get() != token) return@postDelayed
+
+                    val settle = RemoteViews(
+                        context.packageName,
+                        R.layout.lyrics_widget_layout
+                    ).apply {
+                        when (settings.transition) {
+                            LyricsWidgetSettings.TRANSITION_FADE ->
+                                setFloat(R.id.lyrics_widget_current_container, "setAlpha", 1f)
+                            LyricsWidgetSettings.TRANSITION_SLIDE ->
+                                setFloat(R.id.lyrics_widget_current_container, "setTranslationY", 0f)
+                        }
+                    }
+                    manager.partiallyUpdateAppWidget(ids, settle)
+                }, 160L)
+            }
         }
 
         private fun applyWidgetSettings(
@@ -161,10 +195,17 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                 )
             }
 
-            if (settings.transition == LyricsWidgetSettings.TRANSITION_FADE) {
-                views.setFloat(R.id.lyrics_widget_current_container, "setAlpha", 0.96f)
-            } else if (settings.transition == LyricsWidgetSettings.TRANSITION_SLIDE) {
-                views.setFloat(R.id.lyrics_widget_current_container, "setTranslationY", 0f)
+            when (settings.transition) {
+                LyricsWidgetSettings.TRANSITION_NONE -> {
+                    views.setFloat(R.id.lyrics_widget_current_container, "setAlpha", 1f)
+                    views.setFloat(R.id.lyrics_widget_current_container, "setTranslationY", 0f)
+                }
+                LyricsWidgetSettings.TRANSITION_FADE -> {
+                    views.setFloat(R.id.lyrics_widget_current_container, "setAlpha", 1f)
+                }
+                LyricsWidgetSettings.TRANSITION_SLIDE -> {
+                    views.setFloat(R.id.lyrics_widget_current_container, "setTranslationY", 0f)
+                }
             }
         }
 
