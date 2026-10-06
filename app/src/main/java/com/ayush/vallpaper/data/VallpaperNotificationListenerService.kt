@@ -3,29 +3,35 @@ package com.ayush.vallpaper.data
 import android.content.ComponentName
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
+import android.util.Log
 import com.ayush.vallpaper.VallpaperApplication
 
-class VallpaperNotificationListenerService :
-    NotificationListenerService() {
+class VallpaperNotificationListenerService : NotificationListenerService() {
+
+    companion object {
+        private const val TAG = "VallpaperMedia"
+    }
 
     private val vallpaperApplication: VallpaperApplication
         get() = application as VallpaperApplication
 
     override fun onListenerConnected() {
         super.onListenerConnected()
-        vallpaperApplication.trackRepository.start()
-        vallpaperApplication.trackRepository.refresh()
+        Log.d(TAG, "Notification listener connected")
+        vallpaperApplication.trackRepository.onListenerConnected()
     }
 
     override fun onListenerDisconnected() {
-        // Android documents requestRebind() as the supported recovery path
-        // when a NotificationListenerService becomes disconnected.
-        NotificationListenerService.requestRebind(
+        Log.d(TAG, "Notification listener disconnected")
+        vallpaperApplication.trackRepository.onListenerDisconnected()
+
+        requestRebind(
             ComponentName(
                 this,
                 VallpaperNotificationListenerService::class.java
             )
         )
+
         super.onListenerDisconnected()
     }
 
