@@ -45,7 +45,7 @@
         <!-- Only the current line is clipped during the slide animation. -->
         <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="64dp"
+            android:layout_height="54dp"
             android:clipChildren="true"
             android:clipToPadding="true">
 
@@ -60,7 +60,7 @@
 
                 <FrameLayout
                     android:layout_width="match_parent"
-                    android:layout_height="64dp">
+                    android:layout_height="54dp">
 
                     <TextView
                         android:id="@+id/lyrics_widget_current_a_sans"
@@ -120,7 +120,7 @@
 
                 <FrameLayout
                     android:layout_width="match_parent"
-                    android:layout_height="64dp">
+                    android:layout_height="54dp">
 
                     <TextView
                         android:id="@+id/lyrics_widget_current_b_sans"
@@ -186,9 +186,9 @@
             android:id="@+id/lyrics_widget_next_a_sans"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:paddingTop="3dp"
-            android:paddingBottom="3dp"
+            android:layout_marginTop="-2dp"
+            android:paddingTop="0dp"
+            android:paddingBottom="0dp"
             android:gravity="center"
             android:includeFontPadding="true"
             android:textColor="#666B73"
@@ -200,9 +200,9 @@
             android:id="@+id/lyrics_widget_next_a_serif"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:paddingTop="3dp"
-            android:paddingBottom="3dp"
+            android:layout_marginTop="-2dp"
+            android:paddingTop="0dp"
+            android:paddingBottom="0dp"
             android:gravity="center"
             android:includeFontPadding="true"
             android:textColor="#666B73"
@@ -216,9 +216,9 @@
             android:id="@+id/lyrics_widget_next_a_mono"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:paddingTop="3dp"
-            android:paddingBottom="3dp"
+            android:layout_marginTop="-2dp"
+            android:paddingTop="0dp"
+            android:paddingBottom="0dp"
             android:gravity="center"
             android:includeFontPadding="true"
             android:textColor="#666B73"
