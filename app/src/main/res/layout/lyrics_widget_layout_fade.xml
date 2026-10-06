@@ -32,8 +32,7 @@
     <FrameLayout
         android:id="@+id/lyrics_widget_lyrics_container"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1">
+        android:layout_height="wrap_content">
 
         <ViewFlipper
             android:id="@+id/lyrics_widget_current_flipper"
