@@ -5,7 +5,10 @@ import android.content.Context
 data class LyricsWidgetSettings(
     val fontSizeSp: Float = 19f,
     val fontFamily: String = FONT_SANS,
-    val transition: String = TRANSITION_FADE
+    val transition: String = TRANSITION_FADE,
+    val showSongName: Boolean = true,
+    val currentColorHex: String = "#FFFFFFFF",
+    val nextColorHex: String = "#FF666B73"
 ) {
     companion object {
         const val FONT_SANS = "sans"
@@ -36,14 +39,16 @@ class LyricsWidgetSettingsRepository(context: Context) {
             transition = preferences.getString(
                 "transition",
                 LyricsWidgetSettings.TRANSITION_FADE
-            ) ?: LyricsWidgetSettings.TRANSITION_FADE
+            ) ?: LyricsWidgetSettings.TRANSITION_FADE,
+            showSongName = preferences.getBoolean("show_song_name", true),
+            currentColorHex = preferences.getString("current_color", "#FFFFFFFF")
+                ?: "#FFFFFFFF",
+            nextColorHex = preferences.getString("next_color", "#FF666B73")
+                ?: "#FF666B73"
         )
 
     fun setFontSize(sizeSp: Float) {
-        preferences.edit().putFloat(
-            "font_size_sp",
-            sizeSp.coerceIn(14f, 28f)
-        ).apply()
+        preferences.edit().putFloat("font_size_sp", sizeSp.coerceIn(14f, 28f)).apply()
     }
 
     fun setFontFamily(fontFamily: String) {
@@ -52,5 +57,17 @@ class LyricsWidgetSettingsRepository(context: Context) {
 
     fun setTransition(transition: String) {
         preferences.edit().putString("transition", transition).apply()
+    }
+
+    fun setShowSongName(show: Boolean) {
+        preferences.edit().putBoolean("show_song_name", show).apply()
+    }
+
+    fun setCurrentColor(hex: String) {
+        preferences.edit().putString("current_color", hex).apply()
+    }
+
+    fun setNextColor(hex: String) {
+        preferences.edit().putString("next_color", hex).apply()
     }
 }
