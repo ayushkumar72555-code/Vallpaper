@@ -340,6 +340,7 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                             if (scaled !== bitmap) bitmap.recycle()
                             views.setImageViewBitmap(R.id.lyrics_widget_artwork, scaled)
                         }
+                    }
                 }
             }
         }
