@@ -27,7 +27,6 @@ data class LyricsWidgetState(
     val positionMs: Long = 0L,
     val currentLine: String = "",
     val previousLine: String = "",
-    val nextLine: String = "",
     val currentIndex: Int = -1,
     val playbackStatus: String = "WAITING"
 )
