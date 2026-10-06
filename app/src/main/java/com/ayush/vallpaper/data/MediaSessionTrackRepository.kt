@@ -427,7 +427,7 @@ class MediaSessionTrackRepository(private val context: Context) : TrackRepositor
             title = title,
             artist = artist,
             album = album,
-            artworkUrl = resolveArtwork(metadata),
+            artworkUrl = resolveArtwork(metadata, controller.packageName),
             durationMs = metadata
                 .getLong(MediaMetadata.METADATA_KEY_DURATION)
                 .coerceAtLeast(0L)
@@ -451,13 +451,13 @@ class MediaSessionTrackRepository(private val context: Context) : TrackRepositor
         }
     }
 
-    private fun resolveArtwork(metadata: MediaMetadata): String {
+    private fun resolveArtwork(metadata: MediaMetadata, packageName: String): String {
         // Prefer an actual bitmap supplied by the media session over a URI.
         // Some players, including Spotify in some contexts, expose a
         // notification/canvas image through the URI while the bitmap contains
         // the actual artwork.
         findArtworkBitmap(metadata)?.let { bitmap ->
-            val cached = saveArtwork(bitmap, metadata)
+            val cached = saveArtwork(bitmap, metadata, packageName)
             if (cached.isNotBlank()) return cached
         }
 
@@ -562,7 +562,7 @@ class MediaSessionTrackRepository(private val context: Context) : TrackRepositor
             .joinToString("") { "%02x".format(it) }
     }
 
-    private fun saveArtwork(bitmap: Bitmap, metadata: MediaMetadata): String {
+    private fun saveArtwork(bitmap: Bitmap, metadata: MediaMetadata, packageName: String): String {
         return try {
             val artworkDirectory = File(context.cacheDir, "media_artwork")
             if (!artworkDirectory.exists() && !artworkDirectory.mkdirs()) return ""
@@ -576,6 +576,7 @@ class MediaSessionTrackRepository(private val context: Context) : TrackRepositor
             // tracks can share a title, and rapid track changes can otherwise
             // cause an old cached image to be reused.
             val identity = listOf(
+                packageName,
                 title,
                 artist,
                 album,
