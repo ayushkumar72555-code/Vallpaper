@@ -45,6 +45,7 @@ class VallpaperNotificationListenerService : NotificationListenerService() {
     }
 
     override fun onNotificationRemoved(sbn: StatusBarNotification) {
+        vallpaperApplication.trackRepository.onMediaNotificationRemoved(sbn)
         vallpaperApplication.trackRepository.refresh()
     }
 }
