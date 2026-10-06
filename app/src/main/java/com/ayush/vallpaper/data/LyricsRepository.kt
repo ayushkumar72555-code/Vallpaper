@@ -1,5 +1,6 @@
 package com.ayush.vallpaper.data
 
+import android.content.Context
 import android.util.Log
 import com.ayush.vallpaper.domain.model.Lyrics
 import com.ayush.vallpaper.domain.model.LyricLine
@@ -14,7 +15,9 @@ import java.net.URLEncoder
 import java.util.concurrent.ConcurrentHashMap
 import java.util.Locale
 
-class LyricsRepository {
+class LyricsRepository(
+    context: Context
+) {
 
     companion object {
         private const val TAG = "VallpaperLyrics"
@@ -22,14 +25,25 @@ class LyricsRepository {
     }
 
     private val memoryCache = ConcurrentHashMap<String, Lyrics?>()
+    private val persistentCache = PersistentLyricsCache(context.applicationContext)
 
     suspend fun findLyrics(track: Track): Lyrics? = withContext(Dispatchers.IO) {
         memoryCache[track.id]?.let { return@withContext it }
 
+        persistentCache.read(track.id)?.let { lyrics ->
+            memoryCache[track.id] = lyrics
+            Log.d(TAG, "Lyrics cache hit: ${track.title}")
+            return@withContext lyrics
+        }
+
         val result = findExact(track) ?: findBySearch(track)
+
         if (result != null) {
             memoryCache[track.id] = result
+            persistentCache.write(track.id, result)
+            Log.d(TAG, "Lyrics cached: ${track.title}")
         }
+
         result
     }
 
