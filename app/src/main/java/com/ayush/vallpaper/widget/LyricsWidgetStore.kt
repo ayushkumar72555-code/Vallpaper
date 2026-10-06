@@ -98,7 +98,6 @@ object LyricsWidgetStore {
             currentIndex = index
         )
     }
-    }
 
     private fun parseLines(json: String): List<LyricLine> {
         if (json.isBlank()) return emptyList()
