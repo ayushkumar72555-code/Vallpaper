@@ -6,6 +6,8 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.graphics.BitmapFactory
+import android.net.Uri
 import android.widget.RemoteViews
 import com.ayush.vallpaper.MainActivity
 import com.ayush.vallpaper.R
@@ -21,6 +23,7 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
             setTextViewText(R.id.lyrics_widget_status, "WAITING")
             setTextViewText(R.id.lyrics_widget_title, "")
             setTextViewText(R.id.lyrics_widget_artist, "")
+            setImageViewResource(R.id.lyrics_widget_artwork, android.R.drawable.ic_media_play)
             setTextViewText(R.id.lyrics_widget_previous, "")
             setTextViewText(R.id.lyrics_widget_current, "PLAY MUSIC TO SHOW LYRICS")
             setTextViewText(R.id.lyrics_widget_next, "")
@@ -71,6 +74,7 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                     R.id.lyrics_widget_current,
                     state.currentLine.ifBlank { "Lyrics unavailable" }
                 )
+                applyArtwork(this, state.artworkUrl)
                 setTextViewText(
                     R.id.lyrics_widget_next,
                     state.nextLine.ifBlank { " " }
@@ -95,6 +99,7 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                 context.packageName,
                 R.layout.lyrics_widget_layout
             ).apply {
+                applyArtwork(this, state.artworkUrl)
                 setTextViewText(
                     R.id.lyrics_widget_previous,
                     state.previousLine.ifBlank { " " }
@@ -111,6 +116,24 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
             }
 
             manager.partiallyUpdateAppWidget(ids, views)
+        }
+
+        private fun applyArtwork(views: RemoteViews, artworkUrl: String) {
+            val uri = runCatching { Uri.parse(artworkUrl) }.getOrNull()
+            val bitmap = if (uri?.scheme == "file" && !uri.path.isNullOrBlank()) {
+                runCatching { BitmapFactory.decodeFile(uri.path) }.getOrNull()
+            } else {
+                null
+            }
+
+            if (bitmap != null) {
+                views.setImageViewBitmap(R.id.lyrics_widget_artwork, bitmap)
+            } else {
+                views.setImageViewResource(
+                    R.id.lyrics_widget_artwork,
+                    android.R.drawable.ic_media_play
+                )
+            }
         }
 
         private fun openAppPendingIntent(context: Context): PendingIntent {
