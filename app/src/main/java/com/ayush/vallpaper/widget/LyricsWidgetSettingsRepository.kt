@@ -7,8 +7,7 @@ data class LyricsWidgetSettings(
     val fontFamily: String = FONT_SANS,
     val transition: String = TRANSITION_FADE,
     val showSongName: Boolean = true,
-    val currentColorHex: String = "#FFFFFFFF",
-    val nextColorHex: String = "#FF666B73"
+    val lyricColorHex: String = "#FFFFFFFF"
 ) {
     companion object {
         const val FONT_SANS = "sans"
@@ -41,10 +40,10 @@ class LyricsWidgetSettingsRepository(context: Context) {
                 LyricsWidgetSettings.TRANSITION_FADE
             ) ?: LyricsWidgetSettings.TRANSITION_FADE,
             showSongName = preferences.getBoolean("show_song_name", true),
-            currentColorHex = preferences.getString("current_color", "#FFFFFFFF")
-                ?: "#FFFFFFFF",
-            nextColorHex = preferences.getString("next_color", "#FF666B73")
-                ?: "#FF666B73"
+            lyricColorHex = preferences.getString(
+                "lyric_color",
+                preferences.getString("current_color", "#FFFFFFFF")
+            ) ?: "#FFFFFFFF"
         )
 
     fun setFontSize(sizeSp: Float) {
@@ -63,11 +62,7 @@ class LyricsWidgetSettingsRepository(context: Context) {
         preferences.edit().putBoolean("show_song_name", show).apply()
     }
 
-    fun setCurrentColor(hex: String) {
-        preferences.edit().putString("current_color", hex).apply()
-    }
-
-    fun setNextColor(hex: String) {
-        preferences.edit().putString("next_color", hex).apply()
+    fun setLyricColor(hex: String) {
+        preferences.edit().putString("lyric_color", hex).apply()
     }
 }
