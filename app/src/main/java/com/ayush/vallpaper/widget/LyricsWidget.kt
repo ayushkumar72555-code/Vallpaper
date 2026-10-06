@@ -1,9 +1,11 @@
 package com.ayush.vallpaper.widget
 
+import android.content.ComponentName
 import android.content.Context
 import androidx.compose.ui.graphics.Color
-import androidx.compose.runtime.collectAsState
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextAlign as ComposeTextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.action.clickable
@@ -25,42 +27,48 @@ import androidx.glance.layout.width
 import androidx.glance.text.FontFamily
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
+import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
-import androidx.glance.unit.dp
-import androidx.glance.unit.sp
 import com.ayush.vallpaper.MainActivity
 import com.ayush.vallpaper.VallpaperApplication
 
 class LyricsWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val initialState = LyricsWidgetStore.read(context)
-        val stateFlow = LyricsWidgetStore.stateFlow(context)
+        val state = LyricsWidgetStore.read(context)
 
         provideContent {
-            val state by stateFlow.collectAsState(initial = initialState)
-            LyricsWidgetContent(state)
+            LyricsWidgetContent(
+                state = state,
+                context = context
+            )
         }
     }
 
     @androidx.compose.runtime.Composable
-    private fun LyricsWidgetContent(state: LyricsWidgetState) {
+    private fun LyricsWidgetContent(
+        state: LyricsWidgetState,
+        context: Context
+    ) {
         val background = ColorProvider(Color(0xFF101010))
         val orange = ColorProvider(Color(0xFFFF7A00))
         val primary = ColorProvider(Color(0xFFF5F5F5))
         val secondary = ColorProvider(Color(0xFF8F8F8F))
+
+        val openAppAction = actionStartActivity(
+            ComponentName(context, MainActivity::class.java)
+        )
 
         Column(
             modifier = GlanceModifier
                 .fillMaxSize()
                 .background(background)
                 .padding(16.dp)
-                .clickable(actionStartActivity<MainActivity>()),
+                .clickable(openAppAction),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Row(
                 modifier = GlanceModifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.Start,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
@@ -73,7 +81,9 @@ class LyricsWidget : GlanceAppWidget() {
                     ),
                     maxLines = 1
                 )
+
                 Spacer(GlanceModifier.width(8.dp))
+
                 Text(
                     text = if (state.currentIndex >= 0) "SYNCED" else "WAITING",
                     style = TextStyle(
@@ -108,6 +118,7 @@ class LyricsWidget : GlanceAppWidget() {
                     ),
                     maxLines = 1
                 )
+
                 Text(
                     text = state.artist,
                     style = TextStyle(
@@ -160,6 +171,7 @@ class LyricsWidget : GlanceAppWidget() {
 }
 
 class LyricsWidgetReceiver : GlanceAppWidgetReceiver() {
+
     override val glanceAppWidget: GlanceAppWidget = LyricsWidget()
 
     override fun onEnabled(context: Context) {
