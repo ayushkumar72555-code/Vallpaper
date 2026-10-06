@@ -253,7 +253,8 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
 
             views.setTextColor(R.id.lyrics_widget_title, lyricColor)
             views.setTextColor(R.id.lyrics_widget_artist, lyricColor)
-            views.setInt(R.id.lyrics_widget_progress, "setProgressTint", lyricColor)
+            views.setInt(R.id.lyrics_widget_title_divider, "setBackgroundColor", lyricColor)
+            views.setInt(R.id.lyrics_widget_progress, "setColorFilter", lyricColor)
             views.setInt(R.id.lyrics_widget_progress, "setThumbTint", lyricColor)
             views.setInt(R.id.lyrics_widget_previous, "setColorFilter", lyricColor)
             views.setInt(R.id.lyrics_widget_play_pause, "setColorFilter", lyricColor)
