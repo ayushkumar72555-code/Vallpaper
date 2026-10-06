@@ -483,7 +483,7 @@ class MediaSessionTrackRepository(private val context: Context) : TrackRepositor
         }
 
         metadata.description?.iconBitmap?.let { bitmap ->
-            val cached = saveArtwork(bitmap, metadata)
+            val cached = saveArtwork(bitmap, metadata, packageName)
             if (cached.isNotBlank()) return cached
         }
 
