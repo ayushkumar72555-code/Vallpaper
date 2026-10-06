@@ -7,52 +7,136 @@ import com.ayush.vallpaper.domain.model.Track
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
+import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
+import java.util.concurrent.ConcurrentHashMap
 
 class LyricsRepository {
 
     companion object {
         private const val TAG = "VallpaperLyrics"
-        private const val BASE_URL = "https://lrclib.net/api/search"
+        private const val BASE_URL = "https://lrclib.net/api"
     }
 
+    private val memoryCache = ConcurrentHashMap<String, Lyrics?>()
+
     suspend fun findLyrics(track: Track): Lyrics? = withContext(Dispatchers.IO) {
-        runCatching {
-            val query = buildString {
-                append("track_name=")
-                append(URLEncoder.encode(track.title, "UTF-8"))
-                append("&artist_name=")
-                append(URLEncoder.encode(track.artist, "UTF-8"))
-                if (track.album.isNotBlank() && track.album != "Unknown album") {
-                    append("&album_name=")
-                    append(URLEncoder.encode(track.album, "UTF-8"))
-                }
-            }
+        memoryCache[track.id]?.let { return@withContext it }
 
-            val connection = (URL(BASE_URL + "?" + query).openConnection() as HttpURLConnection).apply {
-                requestMethod = "GET"
-                connectTimeout = 6_000
-                readTimeout = 6_000
-                setRequestProperty("Accept", "application/json")
-                setRequestProperty("User-Agent", "Vallpaper/1.0 (https://github.com/ayushkumar72555-code/Vallpaper)")
-            }
+        val result = findExact(track) ?: findBySearch(track)
+        memoryCache[track.id] = result
+        result
+    }
 
-            try {
-                if (connection.responseCode !in 200..299) {
-                    Log.d(TAG, "Lyrics request failed: " + connection.responseCode)
-                    return@runCatching null
-                }
-
-                val body = connection.inputStream.bufferedReader().use { it.readText() }
-                selectBestResult(JSONArray(body), track)
-            } finally {
-                connection.disconnect()
+    private fun findExact(track: Track): Lyrics? {
+        val query = buildString {
+            append("track_name=")
+            append(URLEncoder.encode(track.title, "UTF-8"))
+            append("&artist_name=")
+            append(URLEncoder.encode(track.artist, "UTF-8"))
+            if (track.album.isNotBlank() && track.album != "Unknown album") {
+                append("&album_name=")
+                append(URLEncoder.encode(track.album, "UTF-8"))
             }
+            if (track.durationMs > 0L) {
+                append("&duration=")
+                append(URLEncoder.encode(
+                    (track.durationMs / 1000.0).roundToInt().toString(),
+                    "UTF-8"
+                ))
+            }
+        }
+
+        return requestJsonObject(BASE_URL + "/get?" + query)?.let { item ->
+            parseResult(item, track)
+        }
+    }
+
+    private fun findBySearch(track: Track): Lyrics? {
+        val query = buildString {
+            append("track_name=")
+            append(URLEncoder.encode(track.title, "UTF-8"))
+            append("&artist_name=")
+            append(URLEncoder.encode(track.artist, "UTF-8"))
+            if (track.album.isNotBlank() && track.album != "Unknown album") {
+                append("&album_name=")
+                append(URLEncoder.encode(track.album, "UTF-8"))
+            }
+        }
+
+        val body = requestString(BASE_URL + "/search?" + query) ?: return null
+        return runCatching {
+            selectBestResult(JSONArray(body), track)
         }.onFailure {
-            Log.d(TAG, "Lyrics lookup failed for " + track.title, it)
+            Log.d(TAG, "Lyrics search parsing failed for " + track.title, it)
         }.getOrNull()
+    }
+
+    private fun requestJsonObject(url: String): JSONObject? {
+        val connection = openConnection(url)
+        return try {
+            if (connection.responseCode !in 200..299) {
+                Log.d(TAG, "Lyrics exact lookup failed: " + connection.responseCode)
+                null
+            } else {
+                connection.inputStream.bufferedReader().use { JSONObject(it.readText()) }
+            }
+        } catch (exception: Exception) {
+            Log.d(TAG, "Lyrics exact lookup failed", exception)
+            null
+        } finally {
+            connection.disconnect()
+        }
+    }
+
+    private fun requestString(url: String): String? {
+        val connection = openConnection(url)
+        return try {
+            if (connection.responseCode !in 200..299) {
+                Log.d(TAG, "Lyrics search failed: " + connection.responseCode)
+                null
+            } else {
+                connection.inputStream.bufferedReader().use { it.readText() }
+            }
+        } catch (exception: Exception) {
+            Log.d(TAG, "Lyrics search failed", exception)
+            null
+        } finally {
+            connection.disconnect()
+        }
+    }
+
+    private fun openConnection(url: String): HttpURLConnection =
+        (URL(url).openConnection() as HttpURLConnection).apply {
+            requestMethod = "GET"
+            connectTimeout = 3_000
+            readTimeout = 4_000
+            setRequestProperty("Accept", "application/json")
+            setRequestProperty(
+                "User-Agent",
+                "Vallpaper/1.0 (https://github.com/ayushkumar72555-code/Vallpaper)"
+            )
+        }
+
+    private fun parseResult(item: JSONObject, track: Track): Lyrics? {
+        val synced = item.optString("syncedLyrics").trim()
+        if (synced.isBlank()) return null
+
+        val title = item.optString("trackName")
+        val artist = item.optString("artistName")
+
+        if (normalize(title) != normalize(track.title) ||
+            normalize(artist) != normalize(track.artist)
+        ) {
+            return null
+        }
+
+        val lines = parseLrc(synced)
+        return lines.takeIf { it.isNotEmpty() }?.let {
+            Lyrics(lines = it, source = "LRCLIB")
+        }
     }
 
     private fun selectBestResult(results: JSONArray, track: Track): Lyrics? {
@@ -120,3 +204,5 @@ class LyricsRepository {
             .replace(Regex("""[^a-z0-9]+"""), " ")
             .trim()
 }
+
+private fun Double.roundToInt(): Int = kotlin.math.round(this).toInt()
