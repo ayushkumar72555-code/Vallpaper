@@ -52,8 +52,7 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                 "PLAY MUSIC TO SHOW LYRICS"
             )
             if (settings.transition == LyricsWidgetSettings.TRANSITION_SLIDE) {
-                setAnimatedBufferNextText(initial, 0, "")
-                setAnimatedBufferNextText(initial, 1, "")
+                setSlideNextText(initial, "")
                 applySlideWidgetSettings(initial, settings)
             } else {
                 applyAnimatedWidgetSettings(initial, settings)
@@ -125,8 +124,7 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                 setAnimatedBufferText(views, 0, line)
                 setAnimatedBufferText(views, 1, line)
                 if (settings.transition == LyricsWidgetSettings.TRANSITION_SLIDE) {
-                    setAnimatedBufferNextText(views, 0, state.nextLine)
-                    setAnimatedBufferNextText(views, 1, state.nextLine)
+                    setSlideNextText(views, state.nextLine)
                     applySlideWidgetSettings(views, settings)
                 } else {
                     applyAnimatedWidgetSettings(views, settings)
@@ -178,11 +176,7 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                 )
 
                 if (settings.transition == LyricsWidgetSettings.TRANSITION_SLIDE) {
-                    setAnimatedBufferNextText(
-                        views,
-                        targetBuffer,
-                        state.nextLine
-                    )
+                    setSlideNextText(views, state.nextLine)
                     applySlideWidgetSettings(views, settings)
                 } else {
                     applyAnimatedWidgetSettings(views, settings)
@@ -296,26 +290,13 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
             )
         }
 
-        private fun setAnimatedBufferNextText(
+        private fun setSlideNextText(
             views: RemoteViews,
-            buffer: Int,
             text: String
         ) {
-            val ids = if (buffer == 0) {
-                intArrayOf(
-                    R.id.lyrics_widget_next_a_sans,
-                    R.id.lyrics_widget_next_a_serif,
-                    R.id.lyrics_widget_next_a_mono
-                )
-            } else {
-                intArrayOf(
-                    R.id.lyrics_widget_next_b_sans,
-                    R.id.lyrics_widget_next_b_serif,
-                    R.id.lyrics_widget_next_b_mono
-                )
-            }
-
-            ids.forEach { views.setTextViewText(it, text) }
+            views.setTextViewText(R.id.lyrics_widget_next_a_sans, text)
+            views.setTextViewText(R.id.lyrics_widget_next_a_serif, text)
+            views.setTextViewText(R.id.lyrics_widget_next_a_mono, text)
         }
 
         private fun applyAnimatedWidgetSettings(
@@ -386,18 +367,6 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                     R.id.lyrics_widget_current_b_mono
                 )
             )
-            val nextIds = arrayOf(
-                intArrayOf(
-                    R.id.lyrics_widget_next_a_sans,
-                    R.id.lyrics_widget_next_a_serif,
-                    R.id.lyrics_widget_next_a_mono
-                ),
-                intArrayOf(
-                    R.id.lyrics_widget_next_b_sans,
-                    R.id.lyrics_widget_next_b_serif,
-                    R.id.lyrics_widget_next_b_mono
-                )
-            )
 
             currentIds.forEach { buffer ->
                 buffer.forEach {
@@ -414,20 +383,25 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                 )
             }
 
-            nextIds.forEach { buffer ->
-                buffer.forEach {
-                    views.setViewVisibility(it, android.view.View.GONE)
-                    views.setTextViewTextSize(
-                        it,
-                        android.util.TypedValue.COMPLEX_UNIT_SP,
-                        (settings.fontSizeSp * 0.63f).coerceAtLeast(10f)
-                    )
-                }
-                views.setViewVisibility(
-                    buffer[fontIndex(settings)],
-                    android.view.View.VISIBLE
+            val nextIds = intArrayOf(
+                R.id.lyrics_widget_next_a_sans,
+                R.id.lyrics_widget_next_a_serif,
+                R.id.lyrics_widget_next_a_mono
+            )
+
+            nextIds.forEach {
+                views.setViewVisibility(it, android.view.View.GONE)
+                views.setTextViewTextSize(
+                    it,
+                    android.util.TypedValue.COMPLEX_UNIT_SP,
+                    (settings.fontSizeSp * 0.63f).coerceAtLeast(10f)
                 )
             }
+
+            views.setViewVisibility(
+                nextIds[fontIndex(settings)],
+                android.view.View.VISIBLE
+            )
         }
 
         private fun fontIndex(settings: LyricsWidgetSettings): Int =
@@ -477,8 +451,7 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                     setAnimatedBufferText(views, 0, line)
                     setAnimatedBufferText(views, 1, line)
                     if (settings.transition == LyricsWidgetSettings.TRANSITION_SLIDE) {
-                        setAnimatedBufferNextText(views, 0, state.nextLine)
-                        setAnimatedBufferNextText(views, 1, state.nextLine)
+                        setSlideNextText(views, state.nextLine)
                         applySlideWidgetSettings(views, settings)
                     } else {
                         applyAnimatedWidgetSettings(views, settings)
