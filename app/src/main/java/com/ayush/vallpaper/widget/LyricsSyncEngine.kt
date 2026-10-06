@@ -81,6 +81,7 @@ class LyricsSyncEngine(
             trackId = track.id,
             title = track.title,
             artist = track.artist,
+            artworkUrl = track.artworkUrl,
             lyrics = lyrics
         )
 
