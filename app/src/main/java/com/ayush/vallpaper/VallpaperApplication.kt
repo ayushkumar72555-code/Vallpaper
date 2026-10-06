@@ -13,6 +13,7 @@ import com.ayush.vallpaper.domain.model.Track
 import com.ayush.vallpaper.widget.LyricsWidget
 import com.ayush.vallpaper.widget.LyricsWidgetReceiver
 import com.ayush.vallpaper.widget.LyricsWidgetStore
+import androidx.glance.appwidget.updateAll
 import com.ayush.vallpaper.ui.screens.WallpaperTarget
 import com.ayush.vallpaper.wallpaper.ArtworkLoader
 import com.ayush.vallpaper.wallpaper.WallpaperApplier
