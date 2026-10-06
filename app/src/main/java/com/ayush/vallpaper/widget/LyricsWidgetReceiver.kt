@@ -58,11 +58,6 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
             setOnClickPendingIntent(R.id.lyrics_widget_previous, actionPendingIntent(context, ACTION_PREVIOUS, 2001))
             setOnClickPendingIntent(R.id.lyrics_widget_play_pause, actionPendingIntent(context, ACTION_PLAY_PAUSE, 2002))
             setOnClickPendingIntent(R.id.lyrics_widget_next, actionPendingIntent(context, ACTION_NEXT, 2003))
-            if (settings.transition != LyricsWidgetSettings.TRANSITION_SLIDE) {
-                setTextViewText(R.id.lyrics_widget_next_sans, "")
-                setTextViewText(R.id.lyrics_widget_next_serif, "")
-                setTextViewText(R.id.lyrics_widget_next_mono, "")
-            }
             setOnClickPendingIntent(
                 R.id.lyrics_widget_root,
                 openAppPendingIntent(context)
@@ -134,20 +129,6 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                     R.id.lyrics_widget_title,
                     state.title.ifBlank { "Vallpaper Lyrics" }
                 )
-                if (settings.transition != LyricsWidgetSettings.TRANSITION_SLIDE) {
-                    setTextViewText(
-                        R.id.lyrics_widget_next_sans,
-                        state.nextLine.ifBlank { " " }
-                    )
-                    setTextViewText(
-                        R.id.lyrics_widget_next_serif,
-                        state.nextLine.ifBlank { " " }
-                    )
-                    setTextViewText(
-                        R.id.lyrics_widget_next_mono,
-                        state.nextLine.ifBlank { " " }
-                    )
-                }
                 setOnClickPendingIntent(
                     R.id.lyrics_widget_root,
                     openAppPendingIntent(context)
@@ -158,142 +139,6 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                 val line = state.currentLine.ifBlank { "Lyrics unavailable" }
                 setAnimatedBufferText(views, 0, line)
                 setAnimatedBufferText(views, 1, line)
-                if (settings.transition == LyricsWidgetSettings.TRANSITION_SLIDE) {
-                    setSlideNextText(views, state.nextLine)
-                    applySlideWidgetSettings(views, settings)
-                } else {
-                    applyAnimatedWidgetSettings(views, settings)
-                }
-                views.setDisplayedChild(R.id.lyrics_widget_current_flipper, 0)
-                activeBuffer.set(0)
-            } else {
-                setStaticCurrentText(
-                    views,
-                    state.currentLine.ifBlank { "Lyrics unavailable" }
-                )
-                applyWidgetSettings(views, settings)
-            }
-
-            manager.updateAppWidget(ids, views)
-        }
-
-        fun updateLyrics(context: Context, state: LyricsWidgetState) {
-            val manager = AppWidgetManager.getInstance(context)
-            val ids = manager.getAppWidgetIds(
-                ComponentName(context, LyricsWidgetReceiver::class.java)
-            )
-            if (ids.isEmpty()) return
-
-            val settings = LyricsWidgetSettingsRepository(context).read()
-            val views = createViews(context, settings).apply {
-                if (settings.transition != LyricsWidgetSettings.TRANSITION_SLIDE) {
-                    setTextViewText(
-                        R.id.lyrics_widget_next_sans,
-                        state.nextLine.ifBlank { " " }
-                    )
-                    setTextViewText(
-                        R.id.lyrics_widget_next_serif,
-                        state.nextLine.ifBlank { " " }
-                    )
-                    setTextViewText(
-                        R.id.lyrics_widget_next_mono,
-                        state.nextLine.ifBlank { " " }
-                    )
-                }
-            }
-
-            if (isAnimated(settings)) {
-                val targetBuffer = 1 - activeBuffer.get()
-                setAnimatedBufferText(
-                    views,
-                    targetBuffer,
-                    state.currentLine.ifBlank { "Lyrics unavailable" }
-                )
-
-                if (settings.transition == LyricsWidgetSettings.TRANSITION_SLIDE) {
-                    setSlideNextText(views, state.nextLine)
-                    applySlideWidgetSettings(views, settings)
-                } else {
-                    applyAnimatedWidgetSettings(views, settings)
-                }
-
-                views.setDisplayedChild(
-                    R.id.lyrics_widget_current_flipper,
-                    targetBuffer
-                )
-                activeBuffer.set(targetBuffer)
-            } else {
-                setStaticCurrentText(
-                    views,
-                    state.currentLine.ifBlank { "Lyrics unavailable" }
-                )
-                applyWidgetSettings(views, settings)
-            }
-
-            manager.partiallyUpdateAppWidget(ids, views)
-        }
-
-        private fun applyCommonAppearance(
-            views: RemoteViews,
-            settings: LyricsWidgetSettings
-        ) {
-            val lyricColor = parseColor(
-                settings.lyricColorHex,
-                android.graphics.Color.WHITE
-            )
-            val titleVisibility = if (settings.showSongName) {
-                android.view.View.VISIBLE
-            } else {
-                android.view.View.GONE
-            }
-
-            views.setViewVisibility(R.id.lyrics_widget_song_info, titleVisibility)
-            views.setViewVisibility(R.id.lyrics_widget_title_divider, titleVisibility)
-            views.setViewVisibility(R.id.lyrics_widget_progress, titleVisibility)
-            views.setViewVisibility(R.id.lyrics_widget_controls, titleVisibility)
-
-            views.setTextColor(R.id.lyrics_widget_title, lyricColor)
-            views.setTextColor(R.id.lyrics_widget_artist, lyricColor)
-            views.setInt(R.id.lyrics_widget_title_divider, "setBackgroundColor", lyricColor)
-            views.setInt(R.id.lyrics_widget_previous, "setColorFilter", lyricColor)
-            views.setInt(R.id.lyrics_widget_play_pause, "setColorFilter", lyricColor)
-            views.setInt(R.id.lyrics_widget_next, "setColorFilter", lyricColor)
-
-            if (settings.transition == LyricsWidgetSettings.TRANSITION_NONE) {
-                intArrayOf(
-                    R.id.lyrics_widget_current_sans,
-                    R.id.lyrics_widget_current_serif,
-                    R.id.lyrics_widget_current_mono
-                ).forEach { views.setTextColor(it, lyricColor) }
-
-                intArrayOf(
-                    R.id.lyrics_widget_next_sans,
-                    R.id.lyrics_widget_next_serif,
-                    R.id.lyrics_widget_next_mono
-                ).forEach { views.setTextColor(it, lyricColor) }
-            } else {
-                intArrayOf(
-                    R.id.lyrics_widget_current_a_sans,
-                    R.id.lyrics_widget_current_a_serif,
-                    R.id.lyrics_widget_current_a_mono,
-                    R.id.lyrics_widget_current_b_sans,
-                    R.id.lyrics_widget_current_b_serif,
-                    R.id.lyrics_widget_current_b_mono
-                ).forEach { views.setTextColor(it, lyricColor) }
-
-                if (settings.transition == LyricsWidgetSettings.TRANSITION_SLIDE) {
-                    intArrayOf(
-                        R.id.lyrics_widget_next_a_sans,
-                        R.id.lyrics_widget_next_a_serif,
-                        R.id.lyrics_widget_next_a_mono
-                    ).forEach { views.setTextColor(it, lyricColor) }
-                } else {
-                    intArrayOf(
-                        R.id.lyrics_widget_next_sans,
-                        R.id.lyrics_widget_next_serif,
-                        R.id.lyrics_widget_next_mono
-                    ).forEach { views.setTextColor(it, lyricColor) }
-                }
             }
         }
 
