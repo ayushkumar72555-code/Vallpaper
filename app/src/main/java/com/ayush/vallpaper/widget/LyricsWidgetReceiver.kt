@@ -6,6 +6,9 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.graphics.BitmapFactory
+import android.net.Uri
+import android.view.View
 import android.widget.RemoteViews
 import com.ayush.vallpaper.MainActivity
 import com.ayush.vallpaper.R
@@ -18,6 +21,24 @@ import java.util.concurrent.atomic.AtomicInteger
 class LyricsWidgetReceiver : AppWidgetProvider() {
 
     override fun onReceive(context: Context, intent: Intent) {
+        when (intent.action) {
+            ACTION_PLAY_PAUSE -> {
+                (context.applicationContext as? VallpaperApplication)
+                    ?.trackRepository?.togglePlayPause()
+                updatePlaybackFromRepository(context)
+                return
+            }
+            ACTION_PREVIOUS -> {
+                (context.applicationContext as? VallpaperApplication)
+                    ?.trackRepository?.skipToPrevious()
+                return
+            }
+            ACTION_NEXT -> {
+                (context.applicationContext as? VallpaperApplication)
+                    ?.trackRepository?.skipToNext()
+                return
+            }
+        }
         super.onReceive(context, intent)
     }
 
@@ -30,6 +51,12 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
         val initial = createViews(context, settings).apply {
             applyCommonAppearance(this, settings)
             setTextViewText(R.id.lyrics_widget_title, "Nothing playing")
+            setTextViewText(R.id.lyrics_widget_artist, "Play music to begin")
+            setProgressBar(R.id.lyrics_widget_progress, 100, 0, true)
+            setImageViewResource(R.id.lyrics_widget_play_pause, android.R.drawable.ic_media_play)
+            setOnClickPendingIntent(R.id.lyrics_widget_previous, actionPendingIntent(context, ACTION_PREVIOUS, 2001))
+            setOnClickPendingIntent(R.id.lyrics_widget_play_pause, actionPendingIntent(context, ACTION_PLAY_PAUSE, 2002))
+            setOnClickPendingIntent(R.id.lyrics_widget_next, actionPendingIntent(context, ACTION_NEXT, 2003))
             if (settings.transition != LyricsWidgetSettings.TRANSITION_SLIDE) {
                 setTextViewText(R.id.lyrics_widget_next_sans, "")
                 setTextViewText(R.id.lyrics_widget_next_serif, "")
@@ -85,6 +112,10 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
 
     companion object {
 
+        private const val ACTION_PLAY_PAUSE = "com.ayush.vallpaper.widget.PLAY_PAUSE"
+        private const val ACTION_PREVIOUS = "com.ayush.vallpaper.widget.PREVIOUS"
+        private const val ACTION_NEXT = "com.ayush.vallpaper.widget.NEXT"
+
         private val activeBuffer = AtomicInteger(0)
 
         fun updateFull(context: Context, state: LyricsWidgetState) {
@@ -97,6 +128,7 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
             val settings = LyricsWidgetSettingsRepository(context).read()
             val views = createViews(context, settings).apply {
                 applyCommonAppearance(this, settings)
+                setSongInfo(context, this, state, settings)
                 setTextViewText(
                     R.id.lyrics_widget_title,
                     state.title.ifBlank { "Vallpaper Lyrics" }
@@ -214,8 +246,17 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                 android.view.View.GONE
             }
 
-            views.setViewVisibility(R.id.lyrics_widget_title, titleVisibility)
+            views.setViewVisibility(R.id.lyrics_widget_song_info, titleVisibility)
             views.setViewVisibility(R.id.lyrics_widget_title_divider, titleVisibility)
+            views.setViewVisibility(R.id.lyrics_widget_progress, titleVisibility)
+            views.setViewVisibility(R.id.lyrics_widget_controls, titleVisibility)
+
+            views.setTextColor(R.id.lyrics_widget_title, lyricColor)
+            views.setTextColor(R.id.lyrics_widget_artist, lyricColor)
+            views.setTextColor(R.id.lyrics_widget_progress, lyricColor)
+            views.setTextColor(R.id.lyrics_widget_previous, lyricColor)
+            views.setTextColor(R.id.lyrics_widget_play_pause, lyricColor)
+            views.setTextColor(R.id.lyrics_widget_next, lyricColor)
 
             if (settings.transition == LyricsWidgetSettings.TRANSITION_NONE) {
                 intArrayOf(
@@ -261,6 +302,106 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
             } catch (_: IllegalArgumentException) {
                 fallback
             }
+
+        private fun setSongInfo(
+            context: Context,
+            views: RemoteViews,
+            state: LyricsWidgetState,
+            settings: LyricsWidgetSettings
+        ) {
+            views.setTextViewText(R.id.lyrics_widget_title, state.title.ifBlank { "Nothing playing" })
+            views.setTextViewText(R.id.lyrics_widget_artist, state.artist.ifBlank { "Unknown artist" })
+            views.setProgressBar(
+                R.id.lyrics_widget_progress,
+                state.durationMs.coerceAtMost(Int.MAX_VALUE.toLong()).toInt(),
+                state.positionMs.coerceAtMost(Int.MAX_VALUE.toLong()).toInt(),
+                state.durationMs <= 0L
+            )
+            views.setImageViewResource(
+                R.id.lyrics_widget_play_pause,
+                if (state.playbackStatus == "PLAYING") {
+                    android.R.drawable.ic_media_pause
+                } else {
+                    android.R.drawable.ic_media_play
+                }
+            )
+            views.setOnClickPendingIntent(R.id.lyrics_widget_previous, actionPendingIntent(context, ACTION_PREVIOUS, 2001))
+            views.setOnClickPendingIntent(R.id.lyrics_widget_play_pause, actionPendingIntent(context, ACTION_PLAY_PAUSE, 2002))
+            views.setOnClickPendingIntent(R.id.lyrics_widget_next, actionPendingIntent(context, ACTION_NEXT, 2003))
+
+            if (state.artworkUrl.isNotBlank()) {
+                runCatching {
+                    val uri = Uri.parse(state.artworkUrl)
+                    context.contentResolver.openInputStream(uri)?.use { input ->
+                        BitmapFactory.decodeStream(input)
+                    }?.let { bitmap ->
+                        views.setImageViewBitmap(R.id.lyrics_widget_artwork, bitmap)
+                    }
+                }
+            }
+        }
+
+        private fun actionPendingIntent(
+            context: Context,
+            action: String,
+            requestCode: Int
+        ): android.app.PendingIntent {
+            val intent = Intent(context, LyricsWidgetReceiver::class.java).setAction(action)
+            return android.app.PendingIntent.getBroadcast(
+                context,
+                requestCode,
+                intent,
+                android.app.PendingIntent.FLAG_UPDATE_CURRENT or
+                    android.app.PendingIntent.FLAG_IMMUTABLE
+            )
+        }
+
+        private fun updatePlaybackFromRepository(context: Context) {
+            CoroutineScope(Dispatchers.IO).launch {
+                val application = context.applicationContext as? VallpaperApplication ?: return@launch
+                val state = LyricsWidgetStore.read(context)
+                val position = application.trackRepository.currentPlaybackPositionMs() ?: state.positionMs
+                val playbackState = application.trackRepository.currentPlaybackState()
+                    ?: android.media.session.PlaybackState.STATE_NONE
+                updatePlayback(
+                    context,
+                    position,
+                    state.durationMs,
+                    playbackState
+                )
+            }
+        }
+
+        fun updatePlayback(
+            context: Context,
+            positionMs: Long,
+            durationMs: Long,
+            playbackState: Int
+        ) {
+            val manager = AppWidgetManager.getInstance(context)
+            val ids = manager.getAppWidgetIds(
+                ComponentName(context, LyricsWidgetReceiver::class.java)
+            )
+            if (ids.isEmpty()) return
+
+            val settings = LyricsWidgetSettingsRepository(context).read()
+            val state = runCatching {
+                kotlinx.coroutines.runBlocking { LyricsWidgetStore.read(context) }
+            }.getOrNull() ?: return
+
+            val views = createViews(context, settings)
+            applyCommonAppearance(views, settings)
+            setSongInfo(context, views, state.copy(
+                positionMs = positionMs,
+                durationMs = durationMs,
+                playbackStatus = when (playbackState) {
+                    android.media.session.PlaybackState.STATE_PLAYING -> "PLAYING"
+                    android.media.session.PlaybackState.STATE_PAUSED -> "PAUSED"
+                    else -> state.playbackStatus
+                }
+            ), settings)
+            manager.partiallyUpdateAppWidget(ids, views)
+        }
 
         private fun createViews(
             context: Context,
@@ -487,6 +628,7 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                 val settings = LyricsWidgetSettingsRepository(context).read()
                 val views = createViews(context, settings).apply {
                     applyCommonAppearance(this, settings)
+                    setSongInfo(context, this, state, settings)
                     setTextViewText(
                         R.id.lyrics_widget_title,
                         state.title.ifBlank { "Vallpaper Lyrics" }
