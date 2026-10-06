@@ -36,7 +36,6 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
             setTextViewText(R.id.lyrics_widget_title, "Nothing playing")
             setTextViewText(R.id.lyrics_widget_artist, "")
             setImageViewResource(R.id.lyrics_widget_artwork, android.R.drawable.ic_media_play)
-            setTextViewText(R.id.lyrics_widget_previous, "")
             setTextViewText(R.id.lyrics_widget_current, "PLAY MUSIC TO SHOW LYRICS")
             setTextViewText(R.id.lyrics_widget_next, "")
             setOnClickPendingIntent(R.id.lyrics_widget_root, openAppPendingIntent(context))
