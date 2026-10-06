@@ -133,11 +133,6 @@ object LyricsWidgetStore {
             } else {
                 ""
             },
-            nextLine = when {
-                index >= 0 -> lines.getOrNull(index + 1)?.text.orEmpty()
-                lines.isNotEmpty() -> lines.first().text
-                else -> ""
-            },
             currentIndex = index,
             playbackStatus = preferences[playbackStatusKey] ?: "WAITING"
         )
