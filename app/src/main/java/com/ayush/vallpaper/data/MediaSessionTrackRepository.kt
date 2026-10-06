@@ -5,8 +5,11 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.media.MediaMetadata
 import android.media.session.MediaController
+import android.media.session.MediaSession
 import android.media.session.MediaSessionManager
 import android.media.session.PlaybackState
+import android.os.Build
+import android.service.notification.StatusBarNotification
 import android.net.Uri
 import android.util.Log
 import com.ayush.vallpaper.domain.model.Track
@@ -29,6 +32,12 @@ class MediaSessionTrackRepository(private val context: Context) : TrackRepositor
 
     private val controllerCallbacks =
         mutableMapOf<MediaController, MediaController.Callback>()
+
+    // Some media apps expose their MediaSession through the media notification
+    // even when the session is not returned by getActiveSessions(). Keep those
+    // controllers as a fallback, keyed by notification package.
+    private val notificationControllers =
+        mutableMapOf<String, MediaController>()
 
     private var listenerConnected = false
 
@@ -74,6 +83,7 @@ class MediaSessionTrackRepository(private val context: Context) : TrackRepositor
         }
 
         clearControllers()
+        notificationControllers.clear()
         _currentTrack.value = null
         Log.d(TAG, "Notification listener disconnected")
     }
@@ -107,6 +117,63 @@ class MediaSessionTrackRepository(private val context: Context) : TrackRepositor
         }
     }
 
+    /**
+     * MediaStyle notifications can carry the MediaSession.Token directly.
+     * This is an important fallback for players whose session is not present
+     * in MediaSessionManager.getActiveSessions(), while their notification is.
+     */
+    fun onMediaNotificationPosted(sbn: StatusBarNotification) {
+        if (!listenerConnected) return
+
+        val token = extractMediaSessionToken(sbn) ?: return
+
+        try {
+            val controller = MediaController(context, token)
+            notificationControllers[sbn.packageName] = controller
+
+            Log.d(
+                TAG,
+                "Media notification session found: package=${sbn.packageName}, " +
+                    "title=${controller.metadata?.getString(MediaMetadata.METADATA_KEY_TITLE)}, " +
+                    "state=${controller.playbackState?.state}"
+            )
+
+            registerControllerCallback(controller)
+            refresh()
+        } catch (exception: Exception) {
+            Log.e(
+                TAG,
+                "Could not create MediaController from notification: ${sbn.packageName}",
+                exception
+            )
+        }
+    }
+
+    private fun extractMediaSessionToken(sbn: StatusBarNotification): MediaSession.Token? {
+        val extras = sbn.notification.extras
+
+        return try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                extras.getParcelable(
+                    android.app.Notification.EXTRA_MEDIA_SESSION,
+                    MediaSession.Token::class.java
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                extras.getParcelable(
+                    android.app.Notification.EXTRA_MEDIA_SESSION
+                ) as? MediaSession.Token
+            }
+        } catch (exception: Exception) {
+            Log.d(
+                TAG,
+                "Could not extract MediaSession.Token from ${sbn.packageName}",
+                exception
+            )
+            null
+        }
+    }
+
     private fun clearControllers() {
         controllerCallbacks.keys.toList().forEach { controller ->
             controllerCallbacks.remove(controller)?.let { callback ->
@@ -134,36 +201,40 @@ class MediaSessionTrackRepository(private val context: Context) : TrackRepositor
             }
 
         controllers.forEach { controller ->
-            if (!controllerCallbacks.containsKey(controller)) {
-                val callback = object : MediaController.Callback() {
-                    override fun onMetadataChanged(metadata: MediaMetadata?) {
-                        Log.d(TAG, "Metadata changed: ${controller.packageName}")
-                        refresh()
-                    }
-
-                    override fun onPlaybackStateChanged(state: PlaybackState?) {
-                        Log.d(
-                            TAG,
-                            "Playback state changed: ${controller.packageName} -> ${state?.state}"
-                        )
-                        refresh()
-                    }
-                }
-
-                try {
-                    controller.registerCallback(callback)
-                    controllerCallbacks[controller] = callback
-                } catch (exception: Exception) {
-                    Log.e(
-                        TAG,
-                        "Could not register callback for ${controller.packageName}",
-                        exception
-                    )
-                }
-            }
+            registerControllerCallback(controller)
         }
 
         updateCurrentTrack(controllers)
+    }
+
+    private fun registerControllerCallback(controller: MediaController) {
+        if (controllerCallbacks.containsKey(controller)) return
+
+        val callback = object : MediaController.Callback() {
+            override fun onMetadataChanged(metadata: MediaMetadata?) {
+                Log.d(TAG, "Metadata changed: ${controller.packageName}")
+                refresh()
+            }
+
+            override fun onPlaybackStateChanged(state: PlaybackState?) {
+                Log.d(
+                    TAG,
+                    "Playback state changed: ${controller.packageName} -> ${state?.state}"
+                )
+                refresh()
+            }
+        }
+
+        try {
+            controller.registerCallback(callback)
+            controllerCallbacks[controller] = callback
+        } catch (exception: Exception) {
+            Log.e(
+                TAG,
+                "Could not register callback for ${controller.packageName}",
+                exception
+            )
+        }
     }
 
     private fun updateCurrentTrack(controllers: List<MediaController>) {
