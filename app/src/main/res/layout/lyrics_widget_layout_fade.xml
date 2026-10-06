@@ -230,46 +230,5 @@
             </FrameLayout>
         </ViewFlipper>
 
-        <FrameLayout
-            android:id="@+id/lyrics_widget_next_container"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:layout_marginTop="62dp">
-
-            <TextView
-                android:id="@+id/lyrics_widget_next_sans"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center"
-                android:textColor="#666B73"
-                android:textSize="12sp"
-                android:maxLines="1"
-                android:ellipsize="end" />
-
-            <TextView
-                android:id="@+id/lyrics_widget_next_serif"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center"
-                android:textColor="#666B73"
-                android:textSize="12sp"
-                android:fontFamily="serif"
-                android:maxLines="1"
-                android:ellipsize="end"
-                android:visibility="gone" />
-
-            <TextView
-                android:id="@+id/lyrics_widget_next_mono"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center"
-                android:textColor="#666B73"
-                android:textSize="12sp"
-                android:fontFamily="monospace"
-                android:maxLines="1"
-                android:ellipsize="end"
-                android:visibility="gone" />
-        </FrameLayout>
     </FrameLayout>
 </LinearLayout>
