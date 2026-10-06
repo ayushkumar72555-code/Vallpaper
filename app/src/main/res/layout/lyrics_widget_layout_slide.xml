@@ -51,38 +51,120 @@
                 android:inAnimation="@anim/widget_lyrics_slide_in"
                 android:outAnimation="@anim/widget_lyrics_slide_out">
 
-                <TextView
-                    android:id="@+id/lyrics_widget_current_a_sans"
+<FrameLayout
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:gravity="center"
-                    android:textColor="#FFFFFF"
-                    android:textSize="19sp"
-                    android:textStyle="bold"
-                    android:shadowColor="#BFFFFFFF"
-                    android:shadowDx="0"
-                    android:shadowDy="0"
-                    android:shadowRadius="8"
-                    android:maxLines="2"
-                    android:ellipsize="end" />
+                    android:layout_height="56dp">
 
-                <TextView
-                    android:id="@+id/lyrics_widget_current_b_sans"
+                    <TextView
+                        android:id="@+id/lyrics_widget_current_a_sans"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:gravity="center"
+                        android:textColor="#FFFFFF"
+                        android:textSize="19sp"
+                        android:textStyle="bold"
+                        android:shadowColor="#BFFFFFFF"
+                        android:shadowDx="0"
+                        android:shadowDy="0"
+                        android:shadowRadius="8"
+                        android:maxLines="2"
+                        android:ellipsize="end" />
+
+                    <TextView
+                        android:id="@+id/lyrics_widget_current_a_serif"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:gravity="center"
+                        android:textColor="#FFFFFF"
+                        android:textSize="19sp"
+                        android:textStyle="bold"
+                        android:fontFamily="serif"
+                        android:shadowColor="#BFFFFFFF"
+                        android:shadowDx="0"
+                        android:shadowDy="0"
+                        android:shadowRadius="8"
+                        android:maxLines="2"
+                        android:ellipsize="end"
+                        android:visibility="gone" />
+
+                    <TextView
+                        android:id="@+id/lyrics_widget_current_a_mono"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:gravity="center"
+                        android:textColor="#FFFFFF"
+                        android:textSize="19sp"
+                        android:textStyle="bold"
+                        android:fontFamily="monospace"
+                        android:shadowColor="#BFFFFFFF"
+                        android:shadowDx="0"
+                        android:shadowDy="0"
+                        android:shadowRadius="8"
+                        android:maxLines="2"
+                        android:ellipsize="end"
+                        android:visibility="gone" />
+                </FrameLayout>
+
+<FrameLayout
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:gravity="center"
-                    android:textColor="#FFFFFF"
-                    android:textSize="19sp"
-                    android:textStyle="bold"
-                    android:shadowColor="#BFFFFFFF"
-                    android:shadowDx="0"
-                    android:shadowDy="0"
-                    android:shadowRadius="8"
-                    android:maxLines="2"
-                    android:ellipsize="end" />
-            </ViewFlipper>
+                    android:layout_height="56dp">
+
+                    <TextView
+                        android:id="@+id/lyrics_widget_current_b_sans"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:gravity="center"
+                        android:textColor="#FFFFFF"
+                        android:textSize="19sp"
+                        android:textStyle="bold"
+                        android:shadowColor="#BFFFFFFF"
+                        android:shadowDx="0"
+                        android:shadowDy="0"
+                        android:shadowRadius="8"
+                        android:maxLines="2"
+                        android:ellipsize="end" />
+
+                    <TextView
+                        android:id="@+id/lyrics_widget_current_b_serif"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:gravity="center"
+                        android:textColor="#FFFFFF"
+                        android:textSize="19sp"
+                        android:textStyle="bold"
+                        android:fontFamily="serif"
+                        android:shadowColor="#BFFFFFFF"
+                        android:shadowDx="0"
+                        android:shadowDy="0"
+                        android:shadowRadius="8"
+                        android:maxLines="2"
+                        android:ellipsize="end"
+                        android:visibility="gone" />
+
+                    <TextView
+                        android:id="@+id/lyrics_widget_current_b_mono"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:gravity="center"
+                        android:textColor="#FFFFFF"
+                        android:textSize="19sp"
+                        android:textStyle="bold"
+                        android:fontFamily="monospace"
+                        android:shadowColor="#BFFFFFFF"
+                        android:shadowDx="0"
+                        android:shadowDy="0"
+                        android:shadowRadius="8"
+                        android:maxLines="2"
+                        android:ellipsize="end"
+                        android:visibility="gone" />
+                </FrameLayout>
+            </ViewFlipper>ViewFlipper>
         </FrameLayout>
 
         <!-- The next line stays stationary. It is only the source for the next transition. -->
