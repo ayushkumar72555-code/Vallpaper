@@ -9,6 +9,7 @@ import android.media.session.MediaSession
 import android.media.session.MediaSessionManager
 import android.media.session.PlaybackState
 import android.os.Build
+import android.os.SystemClock
 import android.service.notification.StatusBarNotification
 import android.net.Uri
 import android.util.Log
@@ -35,16 +36,22 @@ class MediaSessionTrackRepository(private val context: Context) : TrackRepositor
 
     // Some media apps expose their MediaSession through the media notification
     // even when the session is not returned by getActiveSessions(). Keep those
-    // controllers as a fallback, keyed by notification package.
+    // controllers as a fallback, keyed by notification instance. A package-only
+    // key is unsafe because an old notification can be removed after a new one
+    // has already replaced it.
     private val notificationControllers =
-        mutableMapOf<String, MediaController>()
+        mutableMapOf<String, List<MediaController>>()
 
+    @Volatile
     private var listenerConnected = false
+
+    @Volatile
+    private var currentController: MediaController? = null
 
     private val activeSessionsListener =
         MediaSessionManager.OnActiveSessionsChangedListener { controllers ->
             if (listenerConnected) {
-                updateControllers(controllers.orEmpty() + notificationControllers.values)
+                updateControllers(controllers.orEmpty() + notificationControllers.values.flatten())
             }
         }
 
@@ -110,7 +117,7 @@ class MediaSessionTrackRepository(private val context: Context) : TrackRepositor
                 )
             }
 
-            updateControllers(controllers + notificationControllers.values)
+            updateControllers(controllers + notificationControllers.values.flatten())
         } catch (exception: SecurityException) {
             Log.e(TAG, "SecurityException while reading active media sessions", exception)
             _currentTrack.value = null
@@ -149,8 +156,8 @@ class MediaSessionTrackRepository(private val context: Context) : TrackRepositor
 
                     packageTokens.forEach { packageToken ->
                         val controller = MediaController(context, packageToken)
-                        notificationControllers[sbn.packageName] = controller
-                        registerControllerCallback(controller)
+                        notificationControllers[sbn.key] = packageTokens.map { token -> MediaController(context, token) }
+                    notificationControllers[sbn.key].orEmpty().forEach(::registerControllerCallback)
                     }
 
                     refresh()
@@ -176,7 +183,7 @@ class MediaSessionTrackRepository(private val context: Context) : TrackRepositor
 
         try {
             val controller = MediaController(context, token)
-            notificationControllers[sbn.packageName] = controller
+            notificationControllers[sbn.key] = listOf(controller)
 
             Log.d(
                 TAG,
@@ -197,8 +204,8 @@ class MediaSessionTrackRepository(private val context: Context) : TrackRepositor
     }
 
     fun onMediaNotificationRemoved(sbn: StatusBarNotification) {
-        if (notificationControllers.remove(sbn.packageName) != null) {
-            Log.d(TAG, "Media notification removed: package=${sbn.packageName}")
+        if (notificationControllers.remove(sbn.key) != null) {
+            Log.d(TAG, "Media notification removed: package=${sbn.packageName}, key=${sbn.key}")
             refresh()
         }
     }
@@ -239,6 +246,7 @@ class MediaSessionTrackRepository(private val context: Context) : TrackRepositor
             }
         }
         controllerCallbacks.clear()
+        currentController = null
     }
 
     private fun updateControllers(controllers: List<MediaController>) {
@@ -308,6 +316,8 @@ class MediaSessionTrackRepository(private val context: Context) : TrackRepositor
             }
             ?: controllers.firstOrNull { it.metadata != null }
 
+        currentController = controller
+
         val track = controller?.let(::toTrack)
         _currentTrack.value = track
 
@@ -320,6 +330,23 @@ class MediaSessionTrackRepository(private val context: Context) : TrackRepositor
         } else {
             Log.d(TAG, "No usable media metadata found")
         }
+    }
+
+    fun currentPlaybackPositionMs(): Long? {
+        val controller = currentController ?: return null
+        val state = controller.playbackState ?: return null
+        val basePosition = state.position.coerceAtLeast(0L)
+
+        if (state.state != PlaybackState.STATE_PLAYING) {
+            return basePosition
+        }
+
+        val lastUpdate = state.lastPositionUpdateTime
+        if (lastUpdate <= 0L) return basePosition
+
+        val elapsed = (SystemClock.elapsedRealtime() - lastUpdate).coerceAtLeast(0L)
+        val projected = basePosition + (elapsed * state.playbackSpeed).toLong()
+        return projected.coerceAtLeast(0L)
     }
 
     private fun toTrack(controller: MediaController): Track? {
