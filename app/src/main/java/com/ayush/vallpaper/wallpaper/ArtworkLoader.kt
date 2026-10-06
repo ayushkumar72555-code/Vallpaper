@@ -161,8 +161,6 @@ class ArtworkLoader(
      * source. Normal square artwork and genuinely dark artwork are untouched.
      */
     private fun removeBottomLetterbox(bitmap: Bitmap): Bitmap {
-
-    private fun removeBottomLetterbox(bitmap: Bitmap): Bitmap {
         val width = bitmap.width
         val height = bitmap.height
 
