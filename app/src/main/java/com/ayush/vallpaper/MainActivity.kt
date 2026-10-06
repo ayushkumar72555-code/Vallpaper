@@ -1,7 +1,6 @@
 package com.ayush.vallpaper
 
 import android.os.Bundle
-import android.view.Window
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.core.view.WindowCompat
@@ -49,7 +48,11 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        vallpaperApplication.trackRepository.start()
+
+        // Refresh only. The NotificationListenerService owns the media-session
+        // lifecycle and calls onListenerConnected() before access is attempted.
+        vallpaperApplication.trackRepository.refresh()
+
         hideSystemBars()
     }
 }
