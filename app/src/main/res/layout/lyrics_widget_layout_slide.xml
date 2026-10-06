@@ -47,8 +47,13 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
 
-                <TextView
-                    android:id="@+id/lyrics_widget_current_a_sans"
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/lyrics_widget_current_a_sans"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center"
@@ -62,8 +67,8 @@
                     android:maxLines="2"
                     android:ellipsize="end" />
 
-                <TextView
-                    android:id="@+id/lyrics_widget_current_a_serif"
+                    <TextView
+                        android:id="@+id/lyrics_widget_current_a_serif"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center"
@@ -79,8 +84,8 @@
                     android:ellipsize="end"
                     android:visibility="gone" />
 
-                <TextView
-                    android:id="@+id/lyrics_widget_current_a_mono"
+                    <TextView
+                        android:id="@+id/lyrics_widget_current_a_mono"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center"
@@ -95,14 +100,57 @@
                     android:maxLines="2"
                     android:ellipsize="end"
                     android:visibility="gone" />
+
+                    <TextView
+                        android:id="@+id/lyrics_widget_next_a_sans"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="62dp"
+                        android:gravity="center"
+                        android:textColor="#666B73"
+                        android:textSize="12sp"
+                        android:maxLines="1"
+                        android:ellipsize="end" />
+
+                    <TextView
+                        android:id="@+id/lyrics_widget_next_a_serif"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="-16dp"
+                        android:gravity="center"
+                        android:textColor="#666B73"
+                        android:textSize="12sp"
+                        android:fontFamily="serif"
+                        android:maxLines="1"
+                        android:ellipsize="end"
+                        android:visibility="gone" />
+
+                    <TextView
+                        android:id="@+id/lyrics_widget_next_a_mono"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="-16dp"
+                        android:gravity="center"
+                        android:textColor="#666B73"
+                        android:textSize="12sp"
+                        android:fontFamily="monospace"
+                        android:maxLines="1"
+                        android:ellipsize="end"
+                        android:visibility="gone" />
+                </LinearLayout>
             </FrameLayout>
 
             <FrameLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
 
-                <TextView
-                    android:id="@+id/lyrics_widget_current_b_sans"
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/lyrics_widget_current_b_sans"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center"
@@ -116,8 +164,8 @@
                     android:maxLines="2"
                     android:ellipsize="end" />
 
-                <TextView
-                    android:id="@+id/lyrics_widget_current_b_serif"
+                    <TextView
+                        android:id="@+id/lyrics_widget_current_b_serif"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center"
@@ -133,8 +181,8 @@
                     android:ellipsize="end"
                     android:visibility="gone" />
 
-                <TextView
-                    android:id="@+id/lyrics_widget_current_b_mono"
+                    <TextView
+                        android:id="@+id/lyrics_widget_current_b_mono"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center"
@@ -149,49 +197,47 @@
                     android:maxLines="2"
                     android:ellipsize="end"
                     android:visibility="gone" />
+
+                    <TextView
+                        android:id="@+id/lyrics_widget_next_b_sans"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="62dp"
+                        android:gravity="center"
+                        android:textColor="#666B73"
+                        android:textSize="12sp"
+                        android:maxLines="1"
+                        android:ellipsize="end" />
+
+                    <TextView
+                        android:id="@+id/lyrics_widget_next_b_serif"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="-16dp"
+                        android:gravity="center"
+                        android:textColor="#666B73"
+                        android:textSize="12sp"
+                        android:fontFamily="serif"
+                        android:maxLines="1"
+                        android:ellipsize="end"
+                        android:visibility="gone" />
+
+                    <TextView
+                        android:id="@+id/lyrics_widget_next_b_mono"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="-16dp"
+                        android:gravity="center"
+                        android:textColor="#666B73"
+                        android:textSize="12sp"
+                        android:fontFamily="monospace"
+                        android:maxLines="1"
+                        android:ellipsize="end"
+                        android:visibility="gone" />
+                </LinearLayout>
             </FrameLayout>
         </ViewFlipper>
 
-        <FrameLayout
-            android:id="@+id/lyrics_widget_next_container"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:layout_marginTop="62dp">
 
-            <TextView
-                android:id="@+id/lyrics_widget_next_sans"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center"
-                android:textColor="#666B73"
-                android:textSize="12sp"
-                android:maxLines="1"
-                android:ellipsize="end" />
-
-            <TextView
-                android:id="@+id/lyrics_widget_next_serif"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center"
-                android:textColor="#666B73"
-                android:textSize="12sp"
-                android:fontFamily="serif"
-                android:maxLines="1"
-                android:ellipsize="end"
-                android:visibility="gone" />
-
-            <TextView
-                android:id="@+id/lyrics_widget_next_mono"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center"
-                android:textColor="#666B73"
-                android:textSize="12sp"
-                android:fontFamily="monospace"
-                android:maxLines="1"
-                android:ellipsize="end"
-                android:visibility="gone" />
-        </FrameLayout>
     </FrameLayout>
 </LinearLayout>
