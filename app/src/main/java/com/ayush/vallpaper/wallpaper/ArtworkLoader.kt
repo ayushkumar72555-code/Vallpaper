@@ -50,8 +50,9 @@ class ArtworkLoader(
         val height = bitmap.height
 
         if (width <= 0 || height <= 0) return bitmap
-        if (height.toFloat() / width.toFloat() < 1.15f) return bitmap
-
+        // Do not assume the bad source is portrait. Spotify and other media
+        // players can return a landscape/notification canvas containing the
+        // real artwork, a huge black separator, and a second thumbnail.
         val gap = findLargestBlackGap(bitmap)
         if (gap != null) {
             val (gapStart, gapEnd) = gap
