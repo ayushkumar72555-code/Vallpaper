@@ -45,14 +45,14 @@
         <!-- Only the current line is clipped during the slide animation. -->
         <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="54dp"
+            android:layout_height="52dp"
             android:clipChildren="true"
             android:clipToPadding="true">
 
             <ViewFlipper
                 android:id="@+id/lyrics_widget_current_flipper"
                 android:layout_width="match_parent"
-                android:layout_height="64dp"
+                android:layout_height="52dp"
                 android:layout_gravity="center"
                 android:animateFirstView="false"
                 android:inAnimation="@anim/widget_lyrics_slide_in"
@@ -60,7 +60,7 @@
 
                 <FrameLayout
                     android:layout_width="match_parent"
-                    android:layout_height="54dp">
+                    android:layout_height="52dp">
 
                     <TextView
                         android:id="@+id/lyrics_widget_current_a_sans"
@@ -120,7 +120,7 @@
 
                 <FrameLayout
                     android:layout_width="match_parent"
-                    android:layout_height="54dp">
+                    android:layout_height="52dp">
 
                     <TextView
                         android:id="@+id/lyrics_widget_current_b_sans"
@@ -186,7 +186,7 @@
             android:id="@+id/lyrics_widget_next_a_sans"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="-2dp"
+            android:layout_marginTop="-12dp"
             android:paddingTop="0dp"
             android:paddingBottom="0dp"
             android:gravity="center"
@@ -200,7 +200,7 @@
             android:id="@+id/lyrics_widget_next_a_serif"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="-2dp"
+            android:layout_marginTop="-12dp"
             android:paddingTop="0dp"
             android:paddingBottom="0dp"
             android:gravity="center"
@@ -216,7 +216,7 @@
             android:id="@+id/lyrics_widget_next_a_mono"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="-2dp"
+            android:layout_marginTop="-12dp"
             android:paddingTop="0dp"
             android:paddingBottom="0dp"
             android:gravity="center"
