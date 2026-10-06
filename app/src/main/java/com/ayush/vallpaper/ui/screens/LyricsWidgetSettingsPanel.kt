@@ -90,17 +90,10 @@ fun LyricsWidgetSettingsPanel(
     }
 
     Spacer(Modifier.height(16.dp))
-    Text("CURRENT LYRIC COLOR", style = MaterialTheme.typography.labelLarge, color = accent)
+    Text("LYRIC COLOR", style = MaterialTheme.typography.labelLarge, color = accent)
     Spacer(Modifier.height(8.dp))
-    ColorChoices(settings.currentColorHex, accent) {
-        onChanged(settings.copy(currentColorHex = it))
-    }
-
-    Spacer(Modifier.height(16.dp))
-    Text("NEXT LYRIC COLOR", style = MaterialTheme.typography.labelLarge, color = accent)
-    Spacer(Modifier.height(8.dp))
-    ColorChoices(settings.nextColorHex, accent) {
-        onChanged(settings.copy(nextColorHex = it))
+    ColorChoices(settings.lyricColorHex, accent) {
+        onChanged(settings.copy(lyricColorHex = it))
     }
 }
 
@@ -132,6 +125,7 @@ private fun SettingChoices(
 private fun ColorChoices(selected: String, accent: Color, onSelected: (String) -> Unit) {
     val colors = listOf(
         "#FFFFFFFF" to Color.White,
+        "#FF000000" to Color.Black,
         "#FFFF5252" to Color(0xFFFF5252),
         "#FFFF9800" to Color(0xFFFF9800),
         "#FFFFEB3B" to Color(0xFFFFEB3B),
