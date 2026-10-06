@@ -6,12 +6,10 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.os.Handler
-import android.os.Looper
 import android.widget.RemoteViews
 import com.ayush.vallpaper.MainActivity
-import com.ayush.vallpaper.VallpaperApplication
 import com.ayush.vallpaper.R
+import com.ayush.vallpaper.VallpaperApplication
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -28,14 +26,9 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
         appWidgetManager: AppWidgetManager,
         appWidgetIds: IntArray
     ) {
-        val initial = RemoteViews(
-            context.packageName,
-            R.layout.lyrics_widget_layout
-        ).apply {
+        val settings = LyricsWidgetSettingsRepository(context).read()
+        val initial = createViews(context, settings).apply {
             setTextViewText(R.id.lyrics_widget_title, "Nothing playing")
-            setTextViewText(R.id.lyrics_widget_current_sans, "PLAY MUSIC TO SHOW LYRICS")
-            setTextViewText(R.id.lyrics_widget_current_serif, "PLAY MUSIC TO SHOW LYRICS")
-            setTextViewText(R.id.lyrics_widget_current_mono, "PLAY MUSIC TO SHOW LYRICS")
             setTextViewText(R.id.lyrics_widget_next_sans, "")
             setTextViewText(R.id.lyrics_widget_next_serif, "")
             setTextViewText(R.id.lyrics_widget_next_mono, "")
@@ -43,6 +36,25 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                 R.id.lyrics_widget_root,
                 openAppPendingIntent(context)
             )
+        }
+
+        if (isAnimated(settings)) {
+            setAnimatedBufferText(
+                initial,
+                0,
+                "PLAY MUSIC TO SHOW LYRICS"
+            )
+            setAnimatedBufferText(
+                initial,
+                1,
+                "PLAY MUSIC TO SHOW LYRICS"
+            )
+            applyAnimatedWidgetSettings(initial, settings)
+            initial.setDisplayedChild(R.id.lyrics_widget_current_flipper, 0)
+            activeBuffer.set(0)
+        } else {
+            setStaticCurrentText(initial, "PLAY MUSIC TO SHOW LYRICS")
+            applyWidgetSettings(initial, settings)
         }
 
         appWidgetManager.updateAppWidget(appWidgetIds, initial)
@@ -65,8 +77,7 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
 
     companion object {
 
-        private val transitionHandler = Handler(Looper.getMainLooper())
-        private val transitionToken = AtomicInteger(0)
+        private val activeBuffer = AtomicInteger(0)
 
         fun updateFull(context: Context, state: LyricsWidgetState) {
             val manager = AppWidgetManager.getInstance(context)
@@ -75,25 +86,11 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
             )
             if (ids.isEmpty()) return
 
-            val views = RemoteViews(
-                context.packageName,
-                R.layout.lyrics_widget_layout
-            ).apply {
+            val settings = LyricsWidgetSettingsRepository(context).read()
+            val views = createViews(context, settings).apply {
                 setTextViewText(
                     R.id.lyrics_widget_title,
                     state.title.ifBlank { "Vallpaper Lyrics" }
-                )
-                setTextViewText(
-                    R.id.lyrics_widget_current_sans,
-                    state.currentLine.ifBlank { "Lyrics unavailable" }
-                )
-                setTextViewText(
-                    R.id.lyrics_widget_current_serif,
-                    state.currentLine.ifBlank { "Lyrics unavailable" }
-                )
-                setTextViewText(
-                    R.id.lyrics_widget_current_mono,
-                    state.currentLine.ifBlank { "Lyrics unavailable" }
                 )
                 setTextViewText(
                     R.id.lyrics_widget_next_sans,
@@ -107,11 +104,25 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                     R.id.lyrics_widget_next_mono,
                     state.nextLine.ifBlank { " " }
                 )
-                applyWidgetSettings(this, LyricsWidgetSettingsRepository(context).read())
                 setOnClickPendingIntent(
                     R.id.lyrics_widget_root,
                     openAppPendingIntent(context)
                 )
+            }
+
+            if (isAnimated(settings)) {
+                val line = state.currentLine.ifBlank { "Lyrics unavailable" }
+                setAnimatedBufferText(views, 0, line)
+                setAnimatedBufferText(views, 1, line)
+                applyAnimatedWidgetSettings(views, settings)
+                views.setDisplayedChild(R.id.lyrics_widget_current_flipper, 0)
+                activeBuffer.set(0)
+            } else {
+                setStaticCurrentText(
+                    views,
+                    state.currentLine.ifBlank { "Lyrics unavailable" }
+                )
+                applyWidgetSettings(views, settings)
             }
 
             manager.updateAppWidget(ids, views)
@@ -125,23 +136,7 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
             if (ids.isEmpty()) return
 
             val settings = LyricsWidgetSettingsRepository(context).read()
-            val token = transitionToken.incrementAndGet()
-            val views = RemoteViews(
-                context.packageName,
-                R.layout.lyrics_widget_layout
-            ).apply {
-                setTextViewText(
-                    R.id.lyrics_widget_current_sans,
-                    state.currentLine.ifBlank { "Lyrics unavailable" }
-                )
-                setTextViewText(
-                    R.id.lyrics_widget_current_serif,
-                    state.currentLine.ifBlank { "Lyrics unavailable" }
-                )
-                setTextViewText(
-                    R.id.lyrics_widget_current_mono,
-                    state.currentLine.ifBlank { "Lyrics unavailable" }
-                )
+            val views = createViews(context, settings).apply {
                 setTextViewText(
                     R.id.lyrics_widget_next_sans,
                     state.nextLine.ifBlank { " " }
@@ -154,52 +149,80 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                     R.id.lyrics_widget_next_mono,
                     state.nextLine.ifBlank { " " }
                 )
-                applyWidgetSettings(this, settings)
+            }
 
-                when (settings.transition) {
-                    LyricsWidgetSettings.TRANSITION_FADE ->
-                        setFloat(
-                            R.id.lyrics_widget_current_container,
-                            "setAlpha",
-                            0f
-                        )
-                    LyricsWidgetSettings.TRANSITION_SLIDE ->
-                        setFloat(
-                            R.id.lyrics_widget_current_container,
-                            "setTranslationY",
-                            -8f
-                        )
-                }
+            if (isAnimated(settings)) {
+                val targetBuffer = 1 - activeBuffer.get()
+                setAnimatedBufferText(
+                    views,
+                    targetBuffer,
+                    state.currentLine.ifBlank { "Lyrics unavailable" }
+                )
+                applyAnimatedWidgetSettings(views, settings)
+
+                views.setDisplayedChild(
+                    R.id.lyrics_widget_current_flipper,
+                    targetBuffer
+                )
+                activeBuffer.set(targetBuffer)
+            } else {
+                setStaticCurrentText(
+                    views,
+                    state.currentLine.ifBlank { "Lyrics unavailable" }
+                )
+                applyWidgetSettings(views, settings)
             }
 
             manager.partiallyUpdateAppWidget(ids, views)
+        }
 
-            if (settings.transition != LyricsWidgetSettings.TRANSITION_NONE) {
-                transitionHandler.postDelayed({
-                    if (transitionToken.get() != token) return@postDelayed
-
-                    val settle = RemoteViews(
-                        context.packageName,
-                        R.layout.lyrics_widget_layout
-                    ).apply {
-                        when (settings.transition) {
-                            LyricsWidgetSettings.TRANSITION_FADE ->
-                                setFloat(
-                                    R.id.lyrics_widget_current_container,
-                                    "setAlpha",
-                                    1f
-                                )
-                            LyricsWidgetSettings.TRANSITION_SLIDE ->
-                                setFloat(
-                                    R.id.lyrics_widget_current_container,
-                                    "setTranslationY",
-                                    0f
-                                )
-                        }
-                    }
-                    manager.partiallyUpdateAppWidget(ids, settle)
-                }, 160L)
+        private fun createViews(
+            context: Context,
+            settings: LyricsWidgetSettings
+        ): RemoteViews {
+            val layout = when (settings.transition) {
+                LyricsWidgetSettings.TRANSITION_FADE ->
+                    R.layout.lyrics_widget_layout_fade
+                LyricsWidgetSettings.TRANSITION_SLIDE ->
+                    R.layout.lyrics_widget_layout_slide
+                else ->
+                    R.layout.lyrics_widget_layout
             }
+            return RemoteViews(context.packageName, layout)
+        }
+
+        private fun isAnimated(settings: LyricsWidgetSettings): Boolean =
+            settings.transition != LyricsWidgetSettings.TRANSITION_NONE
+
+        private fun setStaticCurrentText(
+            views: RemoteViews,
+            text: String
+        ) {
+            views.setTextViewText(R.id.lyrics_widget_current_sans, text)
+            views.setTextViewText(R.id.lyrics_widget_current_serif, text)
+            views.setTextViewText(R.id.lyrics_widget_current_mono, text)
+        }
+
+        private fun setAnimatedBufferText(
+            views: RemoteViews,
+            buffer: Int,
+            text: String
+        ) {
+            val ids = if (buffer == 0) {
+                intArrayOf(
+                    R.id.lyrics_widget_current_a_sans,
+                    R.id.lyrics_widget_current_a_serif,
+                    R.id.lyrics_widget_current_a_mono
+                )
+            } else {
+                intArrayOf(
+                    R.id.lyrics_widget_current_b_sans,
+                    R.id.lyrics_widget_current_b_serif,
+                    R.id.lyrics_widget_current_b_mono
+                )
+            }
+
+            ids.forEach { views.setTextViewText(it, text) }
         }
 
         private fun applyWidgetSettings(
@@ -219,17 +242,22 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
 
             currentIds.forEach {
                 views.setViewVisibility(it, android.view.View.GONE)
+                views.setTextViewTextSize(
+                    it,
+                    android.util.TypedValue.COMPLEX_UNIT_SP,
+                    settings.fontSizeSp
+                )
             }
             nextIds.forEach {
                 views.setViewVisibility(it, android.view.View.GONE)
+                views.setTextViewTextSize(
+                    it,
+                    android.util.TypedValue.COMPLEX_UNIT_SP,
+                    (settings.fontSizeSp * 0.63f).coerceAtLeast(10f)
+                )
             }
 
-            val currentIndex = when (settings.fontFamily) {
-                LyricsWidgetSettings.FONT_SERIF -> 1
-                LyricsWidgetSettings.FONT_MONOSPACE -> 2
-                else -> 0
-            }
-
+            val currentIndex = fontIndex(settings)
             views.setViewVisibility(
                 currentIds[currentIndex],
                 android.view.View.VISIBLE
@@ -238,15 +266,47 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                 nextIds[currentIndex],
                 android.view.View.VISIBLE
             )
+        }
 
-            currentIds.forEach {
-                views.setTextViewTextSize(
-                    it,
-                    android.util.TypedValue.COMPLEX_UNIT_SP,
-                    settings.fontSizeSp
+        private fun applyAnimatedWidgetSettings(
+            views: RemoteViews,
+            settings: LyricsWidgetSettings
+        ) {
+            val currentIds = arrayOf(
+                intArrayOf(
+                    R.id.lyrics_widget_current_a_sans,
+                    R.id.lyrics_widget_current_a_serif,
+                    R.id.lyrics_widget_current_a_mono
+                ),
+                intArrayOf(
+                    R.id.lyrics_widget_current_b_sans,
+                    R.id.lyrics_widget_current_b_serif,
+                    R.id.lyrics_widget_current_b_mono
+                )
+            )
+            val nextIds = intArrayOf(
+                R.id.lyrics_widget_next_sans,
+                R.id.lyrics_widget_next_serif,
+                R.id.lyrics_widget_next_mono
+            )
+
+            currentIds.forEach { buffer ->
+                buffer.forEach {
+                    views.setViewVisibility(it, android.view.View.GONE)
+                    views.setTextViewTextSize(
+                        it,
+                        android.util.TypedValue.COMPLEX_UNIT_SP,
+                        settings.fontSizeSp
+                    )
+                }
+                views.setViewVisibility(
+                    buffer[fontIndex(settings)],
+                    android.view.View.VISIBLE
                 )
             }
+
             nextIds.forEach {
+                views.setViewVisibility(it, android.view.View.GONE)
                 views.setTextViewTextSize(
                     it,
                     android.util.TypedValue.COMPLEX_UNIT_SP,
@@ -254,35 +314,18 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                 )
             }
 
-            when (settings.transition) {
-                LyricsWidgetSettings.TRANSITION_NONE -> {
-                    views.setFloat(
-                        R.id.lyrics_widget_current_container,
-                        "setAlpha",
-                        1f
-                    )
-                    views.setFloat(
-                        R.id.lyrics_widget_current_container,
-                        "setTranslationY",
-                        0f
-                    )
-                }
-                LyricsWidgetSettings.TRANSITION_FADE -> {
-                    views.setFloat(
-                        R.id.lyrics_widget_current_container,
-                        "setAlpha",
-                        1f
-                    )
-                }
-                LyricsWidgetSettings.TRANSITION_SLIDE -> {
-                    views.setFloat(
-                        R.id.lyrics_widget_current_container,
-                        "setTranslationY",
-                        0f
-                    )
-                }
-            }
+            views.setViewVisibility(
+                nextIds[fontIndex(settings)],
+                android.view.View.VISIBLE
+            )
         }
+
+        private fun fontIndex(settings: LyricsWidgetSettings): Int =
+            when (settings.fontFamily) {
+                LyricsWidgetSettings.FONT_SERIF -> 1
+                LyricsWidgetSettings.FONT_MONOSPACE -> 2
+                else -> 0
+            }
 
         fun refreshAppearance(context: Context) {
             CoroutineScope(Dispatchers.IO).launch {
@@ -293,38 +336,48 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                 )
                 if (ids.isEmpty()) return@launch
 
-                val views = RemoteViews(
-                    context.packageName,
-                    R.layout.lyrics_widget_layout
-                ).apply {
+                val settings = LyricsWidgetSettingsRepository(context).read()
+                val views = createViews(context, settings).apply {
                     setTextViewText(
                         R.id.lyrics_widget_title,
                         state.title.ifBlank { "Vallpaper Lyrics" }
                     )
                     setTextViewText(
-                        R.id.lyrics_widget_current_sans,
-                        state.currentLine.ifBlank { "Lyrics unavailable" }
+                        R.id.lyrics_widget_next_sans,
+                        state.nextLine
                     )
                     setTextViewText(
-                        R.id.lyrics_widget_current_serif,
-                        state.currentLine.ifBlank { "Lyrics unavailable" }
+                        R.id.lyrics_widget_next_serif,
+                        state.nextLine
                     )
                     setTextViewText(
-                        R.id.lyrics_widget_current_mono,
-                        state.currentLine.ifBlank { "Lyrics unavailable" }
-                    )
-                    setTextViewText(R.id.lyrics_widget_next_sans, state.nextLine)
-                    setTextViewText(R.id.lyrics_widget_next_serif, state.nextLine)
-                    setTextViewText(R.id.lyrics_widget_next_mono, state.nextLine)
-                    applyWidgetSettings(
-                        this,
-                        LyricsWidgetSettingsRepository(context).read()
+                        R.id.lyrics_widget_next_mono,
+                        state.nextLine
                     )
                     setOnClickPendingIntent(
                         R.id.lyrics_widget_root,
                         openAppPendingIntent(context)
                     )
                 }
+
+                if (isAnimated(settings)) {
+                    val line = state.currentLine.ifBlank { "Lyrics unavailable" }
+                    setAnimatedBufferText(views, 0, line)
+                    setAnimatedBufferText(views, 1, line)
+                    applyAnimatedWidgetSettings(views, settings)
+                    views.setDisplayedChild(
+                        R.id.lyrics_widget_current_flipper,
+                        0
+                    )
+                    activeBuffer.set(0)
+                } else {
+                    setStaticCurrentText(
+                        views,
+                        state.currentLine.ifBlank { "Lyrics unavailable" }
+                    )
+                    applyWidgetSettings(views, settings)
+                }
+
                 manager.updateAppWidget(ids, views)
             }
         }
