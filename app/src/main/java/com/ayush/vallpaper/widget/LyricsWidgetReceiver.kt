@@ -141,6 +141,56 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
             }
         }
 
+        private fun applyCommonAppearance(
+            views: RemoteViews,
+            settings: LyricsWidgetSettings
+        ) {
+            val lyricColor = parseColor(
+                settings.lyricColorHex,
+                android.graphics.Color.WHITE
+            )
+            val visibility = if (settings.showSongName) {
+                android.view.View.VISIBLE
+            } else {
+                android.view.View.GONE
+            }
+
+            views.setViewVisibility(R.id.lyrics_widget_song_info, visibility)
+            views.setViewVisibility(R.id.lyrics_widget_title_divider, visibility)
+            views.setViewVisibility(R.id.lyrics_widget_progress, visibility)
+            views.setViewVisibility(R.id.lyrics_widget_controls, visibility)
+
+            views.setTextColor(R.id.lyrics_widget_title, lyricColor)
+            views.setTextColor(R.id.lyrics_widget_artist, lyricColor)
+            views.setInt(
+                R.id.lyrics_widget_title_divider,
+                "setBackgroundColor",
+                lyricColor
+            )
+            views.setInt(R.id.lyrics_widget_previous, "setColorFilter", lyricColor)
+            views.setInt(R.id.lyrics_widget_play_pause, "setColorFilter", lyricColor)
+            views.setInt(R.id.lyrics_widget_next, "setColorFilter", lyricColor)
+
+            val currentIds = if (settings.transition == LyricsWidgetSettings.TRANSITION_NONE) {
+                intArrayOf(
+                    R.id.lyrics_widget_current_sans,
+                    R.id.lyrics_widget_current_serif,
+                    R.id.lyrics_widget_current_mono
+                )
+            } else {
+                intArrayOf(
+                    R.id.lyrics_widget_current_a_sans,
+                    R.id.lyrics_widget_current_a_serif,
+                    R.id.lyrics_widget_current_a_mono,
+                    R.id.lyrics_widget_current_b_sans,
+                    R.id.lyrics_widget_current_b_serif,
+                    R.id.lyrics_widget_current_b_mono
+                )
+            }
+
+            currentIds.forEach { views.setTextColor(it, lyricColor) }
+        }
+
         private fun parseColor(hex: String, fallback: Int): Int =
             try {
                 android.graphics.Color.parseColor(hex)
