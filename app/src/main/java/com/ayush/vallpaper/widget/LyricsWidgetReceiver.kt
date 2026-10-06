@@ -99,7 +99,6 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                 context.packageName,
                 R.layout.lyrics_widget_layout
             ).apply {
-                applyArtwork(this, state.artworkUrl)
                 setTextViewText(
                     R.id.lyrics_widget_previous,
                     state.previousLine.ifBlank { " " }
