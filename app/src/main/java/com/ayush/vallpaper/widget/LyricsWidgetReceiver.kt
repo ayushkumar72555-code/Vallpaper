@@ -204,13 +204,9 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
             views: RemoteViews,
             settings: LyricsWidgetSettings
         ) {
-            val currentColor = parseColor(
-                settings.currentColorHex,
+            val lyricColor = parseColor(
+                settings.lyricColorHex,
                 android.graphics.Color.WHITE
-            )
-            val nextColor = parseColor(
-                settings.nextColorHex,
-                android.graphics.Color.rgb(102, 107, 115)
             )
             val titleVisibility = if (settings.showSongName) {
                 android.view.View.VISIBLE
@@ -226,13 +222,13 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                     R.id.lyrics_widget_current_sans,
                     R.id.lyrics_widget_current_serif,
                     R.id.lyrics_widget_current_mono
-                ).forEach { views.setTextColor(it, currentColor) }
+                ).forEach { views.setTextColor(it, lyricColor) }
 
                 intArrayOf(
                     R.id.lyrics_widget_next_sans,
                     R.id.lyrics_widget_next_serif,
                     R.id.lyrics_widget_next_mono
-                ).forEach { views.setTextColor(it, nextColor) }
+                ).forEach { views.setTextColor(it, lyricColor) }
             } else {
                 intArrayOf(
                     R.id.lyrics_widget_current_a_sans,
@@ -241,20 +237,20 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                     R.id.lyrics_widget_current_b_sans,
                     R.id.lyrics_widget_current_b_serif,
                     R.id.lyrics_widget_current_b_mono
-                ).forEach { views.setTextColor(it, currentColor) }
+                ).forEach { views.setTextColor(it, lyricColor) }
 
                 if (settings.transition == LyricsWidgetSettings.TRANSITION_SLIDE) {
                     intArrayOf(
                         R.id.lyrics_widget_next_a_sans,
                         R.id.lyrics_widget_next_a_serif,
                         R.id.lyrics_widget_next_a_mono
-                    ).forEach { views.setTextColor(it, nextColor) }
+                    ).forEach { views.setTextColor(it, lyricColor) }
                 } else {
                     intArrayOf(
                         R.id.lyrics_widget_next_sans,
                         R.id.lyrics_widget_next_serif,
                         R.id.lyrics_widget_next_mono
-                    ).forEach { views.setTextColor(it, nextColor) }
+                    ).forEach { views.setTextColor(it, lyricColor) }
                 }
             }
         }
@@ -490,6 +486,7 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
 
                 val settings = LyricsWidgetSettingsRepository(context).read()
                 val views = createViews(context, settings).apply {
+                    applyCommonAppearance(this, settings)
                     setTextViewText(
                         R.id.lyrics_widget_title,
                         state.title.ifBlank { "Vallpaper Lyrics" }
