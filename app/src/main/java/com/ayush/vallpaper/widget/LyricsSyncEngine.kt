@@ -13,6 +13,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
@@ -91,7 +93,7 @@ class LyricsSyncEngine(
         var lastStatus = ""
         var lastLogAt = 0L
 
-        while (hasWidgets()) {
+        while (currentCoroutineContext().isActive && hasWidgets()) {
             val currentTrack = trackRepository.currentTrack.value
             if (currentTrack?.id != track.id) return
 
