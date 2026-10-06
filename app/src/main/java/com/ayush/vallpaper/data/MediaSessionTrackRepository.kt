@@ -9,7 +9,6 @@ import android.media.session.MediaSession
 import android.media.session.MediaSessionManager
 import android.media.session.PlaybackState
 import android.os.Build
-import android.os.SystemClock
 import android.service.notification.StatusBarNotification
 import android.net.Uri
 import android.util.Log
@@ -54,6 +53,8 @@ class MediaSessionTrackRepository(private val context: Context) : TrackRepositor
 
     @Volatile
     private var currentController: MediaController? = null
+
+    private val playbackClock = PlaybackClock()
 
     private val activeSessionsListener =
         MediaSessionManager.OnActiveSessionsChangedListener { controllers ->
@@ -254,6 +255,7 @@ class MediaSessionTrackRepository(private val context: Context) : TrackRepositor
         }
         controllerCallbacks.clear()
         currentController = null
+        playbackClock.reset()
     }
 
     private fun updateControllers(controllers: List<MediaController>) {
@@ -323,7 +325,14 @@ class MediaSessionTrackRepository(private val context: Context) : TrackRepositor
             }
             ?: controllers.firstOrNull { it.metadata != null }
 
+        val previousController = currentController
         currentController = controller
+
+        if (controller != null) {
+            playbackClock.update(controller.playbackState)
+        } else if (previousController != null) {
+            playbackClock.reset()
+        }
 
         val track = controller?.let(::toTrack)
         _currentTrack.value = track
@@ -340,24 +349,12 @@ class MediaSessionTrackRepository(private val context: Context) : TrackRepositor
     }
 
     fun currentPlaybackState(): Int? {
-        return currentController?.playbackState?.state
+        return playbackClock.state().state
     }
 
     fun currentPlaybackPositionMs(): Long? {
-        val controller = currentController ?: return null
-        val state = controller.playbackState ?: return null
-        val basePosition = state.position.coerceAtLeast(0L)
-
-        if (state.state != PlaybackState.STATE_PLAYING) {
-            return basePosition
-        }
-
-        val lastUpdate = state.lastPositionUpdateTime
-        if (lastUpdate <= 0L) return basePosition
-
-        val elapsed = (SystemClock.elapsedRealtime() - lastUpdate).coerceAtLeast(0L)
-        val projected = basePosition + (elapsed * state.playbackSpeed).toLong()
-        return projected.coerceAtLeast(0L)
+        if (currentController == null) return null
+        return playbackClock.positionMs()
     }
 
     private fun toTrack(controller: MediaController): Track? {
