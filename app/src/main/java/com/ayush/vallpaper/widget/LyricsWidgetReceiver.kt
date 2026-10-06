@@ -28,6 +28,7 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
     ) {
         val settings = LyricsWidgetSettingsRepository(context).read()
         val initial = createViews(context, settings).apply {
+            applyCommonAppearance(this, settings)
             setTextViewText(R.id.lyrics_widget_title, "Nothing playing")
             if (settings.transition != LyricsWidgetSettings.TRANSITION_SLIDE) {
                 setTextViewText(R.id.lyrics_widget_next_sans, "")
@@ -95,6 +96,7 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
 
             val settings = LyricsWidgetSettingsRepository(context).read()
             val views = createViews(context, settings).apply {
+                applyCommonAppearance(this, settings)
                 setTextViewText(
                     R.id.lyrics_widget_title,
                     state.title.ifBlank { "Vallpaper Lyrics" }
@@ -197,6 +199,56 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
 
             manager.partiallyUpdateAppWidget(ids, views)
         }
+
+        private fun applyCommonAppearance(
+            views: RemoteViews,
+            settings: LyricsWidgetSettings
+        ) {
+            val currentColor = parseColor(
+                settings.currentColorHex,
+                android.graphics.Color.WHITE
+            )
+            val nextColor = parseColor(
+                settings.nextColorHex,
+                android.graphics.Color.rgb(102, 107, 115)
+            )
+            val titleVisibility = if (settings.showSongName) {
+                android.view.View.VISIBLE
+            } else {
+                android.view.View.GONE
+            }
+
+            views.setViewVisibility(R.id.lyrics_widget_title, titleVisibility)
+            views.setViewVisibility(R.id.lyrics_widget_title_divider, titleVisibility)
+
+            intArrayOf(
+                R.id.lyrics_widget_current_sans,
+                R.id.lyrics_widget_current_serif,
+                R.id.lyrics_widget_current_mono,
+                R.id.lyrics_widget_current_a_sans,
+                R.id.lyrics_widget_current_a_serif,
+                R.id.lyrics_widget_current_a_mono,
+                R.id.lyrics_widget_current_b_sans,
+                R.id.lyrics_widget_current_b_serif,
+                R.id.lyrics_widget_current_b_mono
+            ).forEach { views.setTextColor(it, currentColor) }
+
+            intArrayOf(
+                R.id.lyrics_widget_next_sans,
+                R.id.lyrics_widget_next_serif,
+                R.id.lyrics_widget_next_mono,
+                R.id.lyrics_widget_next_a_sans,
+                R.id.lyrics_widget_next_a_serif,
+                R.id.lyrics_widget_next_a_mono
+            ).forEach { views.setTextColor(it, nextColor) }
+        }
+
+        private fun parseColor(hex: String, fallback: Int): Int =
+            try {
+                android.graphics.Color.parseColor(hex)
+            } catch (_: IllegalArgumentException) {
+                fallback
+            }
 
         private fun createViews(
             context: Context,
