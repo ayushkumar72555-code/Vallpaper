@@ -12,6 +12,9 @@ import android.widget.RemoteViews
 import com.ayush.vallpaper.MainActivity
 import com.ayush.vallpaper.VallpaperApplication
 import com.ayush.vallpaper.R
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicInteger
 
 class LyricsWidgetReceiver : AppWidgetProvider() {
@@ -84,11 +87,26 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                     R.id.lyrics_widget_current_sans,
                     state.currentLine.ifBlank { "Lyrics unavailable" }
                 )
-                setTextViewText(R.id.lyrics_widget_current_serif, state.currentLine.ifBlank { "Lyrics unavailable" })
-                setTextViewText(R.id.lyrics_widget_current_mono, state.currentLine.ifBlank { "Lyrics unavailable" })
-                setTextViewText(R.id.lyrics_widget_next_sans, state.nextLine.ifBlank { " " })
-                setTextViewText(R.id.lyrics_widget_next_serif, state.nextLine.ifBlank { " " })
-                setTextViewText(R.id.lyrics_widget_next_mono, state.nextLine.ifBlank { " " })
+                setTextViewText(
+                    R.id.lyrics_widget_current_serif,
+                    state.currentLine.ifBlank { "Lyrics unavailable" }
+                )
+                setTextViewText(
+                    R.id.lyrics_widget_current_mono,
+                    state.currentLine.ifBlank { "Lyrics unavailable" }
+                )
+                setTextViewText(
+                    R.id.lyrics_widget_next_sans,
+                    state.nextLine.ifBlank { " " }
+                )
+                setTextViewText(
+                    R.id.lyrics_widget_next_serif,
+                    state.nextLine.ifBlank { " " }
+                )
+                setTextViewText(
+                    R.id.lyrics_widget_next_mono,
+                    state.nextLine.ifBlank { " " }
+                )
                 applyWidgetSettings(this, LyricsWidgetSettingsRepository(context).read())
                 setOnClickPendingIntent(
                     R.id.lyrics_widget_root,
@@ -116,18 +134,41 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                     R.id.lyrics_widget_current_sans,
                     state.currentLine.ifBlank { "Lyrics unavailable" }
                 )
-                setTextViewText(R.id.lyrics_widget_current_serif, state.currentLine.ifBlank { "Lyrics unavailable" })
-                setTextViewText(R.id.lyrics_widget_current_mono, state.currentLine.ifBlank { "Lyrics unavailable" })
-                setTextViewText(R.id.lyrics_widget_next_sans, state.nextLine.ifBlank { " " })
-                setTextViewText(R.id.lyrics_widget_next_serif, state.nextLine.ifBlank { " " })
-                setTextViewText(R.id.lyrics_widget_next_mono, state.nextLine.ifBlank { " " })
+                setTextViewText(
+                    R.id.lyrics_widget_current_serif,
+                    state.currentLine.ifBlank { "Lyrics unavailable" }
+                )
+                setTextViewText(
+                    R.id.lyrics_widget_current_mono,
+                    state.currentLine.ifBlank { "Lyrics unavailable" }
+                )
+                setTextViewText(
+                    R.id.lyrics_widget_next_sans,
+                    state.nextLine.ifBlank { " " }
+                )
+                setTextViewText(
+                    R.id.lyrics_widget_next_serif,
+                    state.nextLine.ifBlank { " " }
+                )
+                setTextViewText(
+                    R.id.lyrics_widget_next_mono,
+                    state.nextLine.ifBlank { " " }
+                )
                 applyWidgetSettings(this, settings)
 
                 when (settings.transition) {
                     LyricsWidgetSettings.TRANSITION_FADE ->
-                        setFloat(R.id.lyrics_widget_current_container, "setAlpha", 0f)
+                        setFloat(
+                            R.id.lyrics_widget_current_container,
+                            "setAlpha",
+                            0f
+                        )
                     LyricsWidgetSettings.TRANSITION_SLIDE ->
-                        setFloat(R.id.lyrics_widget_current_container, "setTranslationY", -8f)
+                        setFloat(
+                            R.id.lyrics_widget_current_container,
+                            "setTranslationY",
+                            -8f
+                        )
                 }
             }
 
@@ -143,9 +184,17 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                     ).apply {
                         when (settings.transition) {
                             LyricsWidgetSettings.TRANSITION_FADE ->
-                                setFloat(R.id.lyrics_widget_current_container, "setAlpha", 1f)
+                                setFloat(
+                                    R.id.lyrics_widget_current_container,
+                                    "setAlpha",
+                                    1f
+                                )
                             LyricsWidgetSettings.TRANSITION_SLIDE ->
-                                setFloat(R.id.lyrics_widget_current_container, "setTranslationY", 0f)
+                                setFloat(
+                                    R.id.lyrics_widget_current_container,
+                                    "setTranslationY",
+                                    0f
+                                )
                         }
                     }
                     manager.partiallyUpdateAppWidget(ids, settle)
@@ -168,8 +217,12 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                 R.id.lyrics_widget_next_mono
             )
 
-            currentIds.forEach { views.setViewVisibility(it, android.view.View.GONE) }
-            nextIds.forEach { views.setViewVisibility(it, android.view.View.GONE) }
+            currentIds.forEach {
+                views.setViewVisibility(it, android.view.View.GONE)
+            }
+            nextIds.forEach {
+                views.setViewVisibility(it, android.view.View.GONE)
+            }
 
             val currentIndex = when (settings.fontFamily) {
                 LyricsWidgetSettings.FONT_SERIF -> 1
@@ -177,8 +230,14 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                 else -> 0
             }
 
-            views.setViewVisibility(currentIds[currentIndex], android.view.View.VISIBLE)
-            views.setViewVisibility(nextIds[currentIndex], android.view.View.VISIBLE)
+            views.setViewVisibility(
+                currentIds[currentIndex],
+                android.view.View.VISIBLE
+            )
+            views.setViewVisibility(
+                nextIds[currentIndex],
+                android.view.View.VISIBLE
+            )
 
             currentIds.forEach {
                 views.setTextViewTextSize(
@@ -197,20 +256,36 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
 
             when (settings.transition) {
                 LyricsWidgetSettings.TRANSITION_NONE -> {
-                    views.setFloat(R.id.lyrics_widget_current_container, "setAlpha", 1f)
-                    views.setFloat(R.id.lyrics_widget_current_container, "setTranslationY", 0f)
+                    views.setFloat(
+                        R.id.lyrics_widget_current_container,
+                        "setAlpha",
+                        1f
+                    )
+                    views.setFloat(
+                        R.id.lyrics_widget_current_container,
+                        "setTranslationY",
+                        0f
+                    )
                 }
                 LyricsWidgetSettings.TRANSITION_FADE -> {
-                    views.setFloat(R.id.lyrics_widget_current_container, "setAlpha", 1f)
+                    views.setFloat(
+                        R.id.lyrics_widget_current_container,
+                        "setAlpha",
+                        1f
+                    )
                 }
                 LyricsWidgetSettings.TRANSITION_SLIDE -> {
-                    views.setFloat(R.id.lyrics_widget_current_container, "setTranslationY", 0f)
+                    views.setFloat(
+                        R.id.lyrics_widget_current_container,
+                        "setTranslationY",
+                        0f
+                    )
                 }
             }
         }
 
         fun refreshAppearance(context: Context) {
-            kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+            CoroutineScope(Dispatchers.IO).launch {
                 val state = LyricsWidgetStore.read(context)
                 val manager = AppWidgetManager.getInstance(context)
                 val ids = manager.getAppWidgetIds(
@@ -222,15 +297,33 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                     context.packageName,
                     R.layout.lyrics_widget_layout
                 ).apply {
-                    setTextViewText(R.id.lyrics_widget_title, state.title.ifBlank { "Vallpaper Lyrics" })
-                    setTextViewText(R.id.lyrics_widget_current_sans, state.currentLine.ifBlank { "Lyrics unavailable" })
-                    setTextViewText(R.id.lyrics_widget_current_serif, state.currentLine.ifBlank { "Lyrics unavailable" })
-                    setTextViewText(R.id.lyrics_widget_current_mono, state.currentLine.ifBlank { "Lyrics unavailable" })
+                    setTextViewText(
+                        R.id.lyrics_widget_title,
+                        state.title.ifBlank { "Vallpaper Lyrics" }
+                    )
+                    setTextViewText(
+                        R.id.lyrics_widget_current_sans,
+                        state.currentLine.ifBlank { "Lyrics unavailable" }
+                    )
+                    setTextViewText(
+                        R.id.lyrics_widget_current_serif,
+                        state.currentLine.ifBlank { "Lyrics unavailable" }
+                    )
+                    setTextViewText(
+                        R.id.lyrics_widget_current_mono,
+                        state.currentLine.ifBlank { "Lyrics unavailable" }
+                    )
                     setTextViewText(R.id.lyrics_widget_next_sans, state.nextLine)
                     setTextViewText(R.id.lyrics_widget_next_serif, state.nextLine)
                     setTextViewText(R.id.lyrics_widget_next_mono, state.nextLine)
-                    applyWidgetSettings(this, LyricsWidgetSettingsRepository(context).read())
-                    setOnClickPendingIntent(R.id.lyrics_widget_root, openAppPendingIntent(context))
+                    applyWidgetSettings(
+                        this,
+                        LyricsWidgetSettingsRepository(context).read()
+                    )
+                    setOnClickPendingIntent(
+                        R.id.lyrics_widget_root,
+                        openAppPendingIntent(context)
+                    )
                 }
                 manager.updateAppWidget(ids, views)
             }
