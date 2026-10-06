@@ -43,7 +43,9 @@ class MediaSessionTrackRepository(private val context: Context) : TrackRepositor
 
     private val activeSessionsListener =
         MediaSessionManager.OnActiveSessionsChangedListener { controllers ->
-            if (listenerConnected) updateControllers(controllers.orEmpty())
+            if (listenerConnected) {
+                updateControllers(controllers.orEmpty() + notificationControllers.values)
+            }
         }
 
     /**
@@ -108,7 +110,7 @@ class MediaSessionTrackRepository(private val context: Context) : TrackRepositor
                 )
             }
 
-            updateControllers(controllers)
+            updateControllers(controllers + notificationControllers.values)
         } catch (exception: SecurityException) {
             Log.e(TAG, "SecurityException while reading active media sessions", exception)
             _currentTrack.value = null
