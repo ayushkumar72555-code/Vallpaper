@@ -151,6 +151,13 @@ class MediaSessionTrackRepository(private val context: Context) : TrackRepositor
         }
     }
 
+    fun onMediaNotificationRemoved(sbn: StatusBarNotification) {
+        if (notificationControllers.remove(sbn.packageName) != null) {
+            Log.d(TAG, "Media notification removed: package=${sbn.packageName}")
+            refresh()
+        }
+    }
+
     private fun extractMediaSessionToken(sbn: StatusBarNotification): MediaSession.Token? {
         val extras = sbn.notification.extras
 
