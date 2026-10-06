@@ -23,6 +23,8 @@ data class LyricsWidgetState(
     val title: String = "",
     val artist: String = "",
     val artworkUrl: String = "",
+    val durationMs: Long = 0L,
+    val positionMs: Long = 0L,
     val currentLine: String = "",
     val previousLine: String = "",
     val nextLine: String = "",
@@ -36,6 +38,8 @@ object LyricsWidgetStore {
     private val titleKey = stringPreferencesKey("title")
     private val artistKey = stringPreferencesKey("artist")
     private val artworkUrlKey = stringPreferencesKey("artwork_url")
+    private val durationKey = longPreferencesKey("duration_ms")
+    private val positionKey = longPreferencesKey("position_ms")
     private val linesKey = stringPreferencesKey("lines")
     private val currentIndexKey = intPreferencesKey("current_index")
     private val updatedAtKey = longPreferencesKey("updated_at")
@@ -47,6 +51,7 @@ object LyricsWidgetStore {
         title: String,
         artist: String,
         artworkUrl: String,
+        durationMs: Long,
         lyrics: Lyrics
     ) {
         val json = JSONArray().apply {
@@ -64,6 +69,8 @@ object LyricsWidgetStore {
             preferences[titleKey] = title
             preferences[artistKey] = artist
             preferences[artworkUrlKey] = artworkUrl
+            preferences[durationKey] = durationMs
+            preferences[positionKey] = 0L
             preferences[linesKey] = json
             preferences[currentIndexKey] = -1
             preferences[playbackStatusKey] = "WAITING"
@@ -73,6 +80,13 @@ object LyricsWidgetStore {
 
     suspend fun clear(context: Context) {
         context.lyricsWidgetDataStore.edit { it.clear() }
+    }
+
+    suspend fun updatePosition(context: Context, positionMs: Long) {
+        context.lyricsWidgetDataStore.edit { preferences ->
+            preferences[positionKey] = positionMs.coerceAtLeast(0L)
+            preferences[updatedAtKey] = System.currentTimeMillis()
+        }
     }
 
     suspend fun updateCurrentIndex(context: Context, index: Int) {
@@ -107,6 +121,8 @@ object LyricsWidgetStore {
             title = preferences[titleKey].orEmpty(),
             artist = preferences[artistKey].orEmpty(),
             artworkUrl = preferences[artworkUrlKey].orEmpty(),
+            durationMs = preferences[durationKey] ?: 0L,
+            positionMs = preferences[positionKey] ?: 0L,
             currentLine = when {
                 index >= 0 -> lines.getOrNull(index)?.text.orEmpty()
                 lines.isNotEmpty() -> "[Instrumental]"
