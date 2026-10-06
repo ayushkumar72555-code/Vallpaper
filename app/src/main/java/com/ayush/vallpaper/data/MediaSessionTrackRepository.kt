@@ -279,6 +279,7 @@ class MediaSessionTrackRepository(private val context: Context) : TrackRepositor
                         Log.d(TAG, "Could not unregister removed controller", exception)
                     }
                 }
+                controllerLastActivity.remove(controller)
             }
 
         controllers.forEach { controller ->
