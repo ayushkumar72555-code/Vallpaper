@@ -19,7 +19,7 @@ class PersistentLyricsCache(
         private val MAX_CACHE_AGE_MS = TimeUnit.DAYS.toMillis(30)
     }
 
-    private val directory = File(context.cacheDir, CACHE_DIRECTORY).apply { mkdirs() }
+    private val directory = File(context.filesDir, CACHE_DIRECTORY).apply { mkdirs() }
 
     fun read(trackId: String): Lyrics? {
         val file = fileFor(trackId)
