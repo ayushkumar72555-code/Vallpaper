@@ -17,6 +17,7 @@ class VallpaperNotificationListenerService : NotificationListenerService() {
 
     override fun onListenerConnected() {
         super.onListenerConnected()
+
         Log.d(TAG, "Notification listener connected")
         vallpaperApplication.trackRepository.onListenerConnected()
     }
@@ -25,7 +26,7 @@ class VallpaperNotificationListenerService : NotificationListenerService() {
         Log.d(TAG, "Notification listener disconnected")
         vallpaperApplication.trackRepository.onListenerDisconnected()
 
-        requestRebind(
+        NotificationListenerService.requestRebind(
             ComponentName(
                 this,
                 VallpaperNotificationListenerService::class.java
