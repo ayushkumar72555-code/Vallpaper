@@ -8,7 +8,9 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.ayush.vallpaper.domain.model.Lyrics
 import com.ayush.vallpaper.domain.model.LyricLine
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -73,8 +75,16 @@ object LyricsWidgetStore {
         }
     }
 
+    fun stateFlow(context: Context): Flow<LyricsWidgetState> =
+        context.lyricsWidgetDataStore.data.map { preferences ->
+            buildState(preferences)
+        }
+
     suspend fun read(context: Context): LyricsWidgetState {
-        val preferences = context.lyricsWidgetDataStore.data.first()
+        return buildState(context.lyricsWidgetDataStore.data.first())
+    }
+
+    private fun buildState(preferences: androidx.datastore.preferences.core.Preferences): LyricsWidgetState {
         val lines = parseLines(preferences[linesKey].orEmpty())
         val index = preferences[currentIndexKey] ?: -1
 
@@ -87,6 +97,7 @@ object LyricsWidgetStore {
             nextLine = lines.getOrNull(index + 1)?.text.orEmpty(),
             currentIndex = index
         )
+    }
     }
 
     private fun parseLines(json: String): List<LyricLine> {
