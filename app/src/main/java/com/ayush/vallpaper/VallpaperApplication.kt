@@ -51,7 +51,7 @@ class VallpaperApplication : Application() {
 
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
-    private val lyricsRepository by lazy { LyricsRepository() }
+    private val lyricsRepository by lazy { LyricsRepository(applicationContext) }
     private val lyricsSyncEngine by lazy {
         com.ayush.vallpaper.widget.LyricsSyncEngine(
             context = applicationContext,
