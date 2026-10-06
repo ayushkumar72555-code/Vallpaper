@@ -6,8 +6,6 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.graphics.BitmapFactory
-import android.net.Uri
 import android.widget.RemoteViews
 import com.ayush.vallpaper.MainActivity
 import com.ayush.vallpaper.VallpaperApplication
@@ -126,5 +124,4 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
             )
         }
     }
-}
 }
