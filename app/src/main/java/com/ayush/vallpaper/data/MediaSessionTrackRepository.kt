@@ -391,6 +391,27 @@ class MediaSessionTrackRepository(private val context: Context) : TrackRepositor
             android.os.SystemClock.elapsedRealtime()
     }
 
+    fun togglePlayPause() {
+        val controller = currentController ?: return
+        val state = controller.playbackState?.state
+        if (state == PlaybackState.STATE_PLAYING ||
+            state == PlaybackState.STATE_FAST_FORWARDING ||
+            state == PlaybackState.STATE_REWINDING
+        ) {
+            controller.transportControls.pause()
+        } else {
+            controller.transportControls.play()
+        }
+    }
+
+    fun skipToPrevious() {
+        currentController?.transportControls?.skipToPrevious()
+    }
+
+    fun skipToNext() {
+        currentController?.transportControls?.skipToNext()
+    }
+
     fun currentPlaybackState(): Int? {
         return playbackClock.state().state
     }
