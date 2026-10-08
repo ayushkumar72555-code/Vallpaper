@@ -61,9 +61,10 @@ fun LyricsWidgetSettingsPanel(
     Text("LYRIC TRANSITION", style = MaterialTheme.typography.labelLarge, color = accent)
     Spacer(Modifier.height(8.dp))
     SettingChoices(
-        listOf("None", "Fade", "Slide"),
+        listOf("None", "Fade", "Slide", "Kinetic"),
         when (settings.transition) {
             LyricsWidgetSettings.TRANSITION_SLIDE -> "Slide"
+            LyricsWidgetSettings.TRANSITION_KINETIC -> "Kinetic"
             LyricsWidgetSettings.TRANSITION_NONE -> "None"
             else -> "Fade"
         },
@@ -71,6 +72,7 @@ fun LyricsWidgetSettingsPanel(
     ) { value ->
         onChanged(settings.copy(transition = when (value) {
             "Slide" -> LyricsWidgetSettings.TRANSITION_SLIDE
+            "Kinetic" -> LyricsWidgetSettings.TRANSITION_KINETIC
             "None" -> LyricsWidgetSettings.TRANSITION_NONE
             else -> LyricsWidgetSettings.TRANSITION_FADE
         }))
