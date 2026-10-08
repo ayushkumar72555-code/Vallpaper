@@ -19,7 +19,6 @@ data class LyricsWidgetSettings(
         const val TRANSITION_NONE = "none"
         const val TRANSITION_FADE = "fade"
         const val TRANSITION_SLIDE = "slide"
-        const val TRANSITION_KINETIC = "kinetic"
 
         const val BACKGROUND_TRANSPARENT = "transparent"
         const val BACKGROUND_BLUR = "blur"
@@ -45,7 +44,14 @@ class LyricsWidgetSettingsRepository(context: Context) {
             transition = preferences.getString(
                 "transition",
                 LyricsWidgetSettings.TRANSITION_FADE
-            ) ?: LyricsWidgetSettings.TRANSITION_FADE,
+            ).let { value ->
+                when (value) {
+                    LyricsWidgetSettings.TRANSITION_NONE,
+                    LyricsWidgetSettings.TRANSITION_FADE,
+                    LyricsWidgetSettings.TRANSITION_SLIDE -> value
+                    else -> LyricsWidgetSettings.TRANSITION_FADE
+                }
+            },
             lyricColorHex = preferences.getString(
                 "lyric_color",
                 preferences.getString("current_color", "#FFFFFFFF")
