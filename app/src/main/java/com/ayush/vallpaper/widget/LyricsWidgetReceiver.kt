@@ -47,11 +47,8 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                 1,
                 "PLAY MUSIC TO SHOW LYRICS"
             )
-            if (settings.transition == LyricsWidgetSettings.TRANSITION_SLIDE) {
-                applySlideWidgetSettings(initial, settings)
-            } else {
-                applyAnimatedWidgetSettings(initial, settings)
-            }
+            applyAnimatedWidgetSettings(initial, settings)
+            applyTransitionAnimation(initial, settings)
             initial.setDisplayedChild(R.id.lyrics_widget_current_flipper, 0)
             activeBuffer.set(0)
         } else {
@@ -409,11 +406,8 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                     val line = state.currentLine.ifBlank { "Lyrics unavailable" }
                     setAnimatedBufferText(views, 0, line)
                     setAnimatedBufferText(views, 1, line)
-                    if (settings.transition == LyricsWidgetSettings.TRANSITION_SLIDE) {
-                        applySlideWidgetSettings(views, settings)
-                    } else {
-                        applyAnimatedWidgetSettings(views, settings)
-                    }
+                    applyAnimatedWidgetSettings(views, settings)
+                    applyTransitionAnimation(views, settings)
                     views.setDisplayedChild(
                         R.id.lyrics_widget_current_flipper,
                         0
