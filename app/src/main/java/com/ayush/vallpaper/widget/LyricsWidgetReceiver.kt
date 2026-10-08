@@ -434,34 +434,36 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                 views.setImageViewBitmap(ids[index], bitmap)
             }
 
-            views.setDisplayedChild(R.id.lyrics_widget_current_flipper, 0)
-            views.setFlipping(R.id.lyrics_widget_current_flipper, true, 58)
+            val manager = AppWidgetManager.getInstance(context)
+            val widgetIds = manager.getAppWidgetIds(
+                ComponentName(context, LyricsWidgetReceiver::class.java)
+            )
+            if (widgetIds.isEmpty()) return
 
             val generation = kineticGeneration.incrementAndGet()
-            Handler(Looper.getMainLooper()).postDelayed({
-                if (kineticGeneration.get() == generation) {
-                    val manager = AppWidgetManager.getInstance(context)
-                    val widgetIds = manager.getAppWidgetIds(
-                        ComponentName(context, LyricsWidgetReceiver::class.java)
-                    )
-                    if (widgetIds.isNotEmpty()) {
-                        val stopViews = RemoteViews(
+
+            views.setDisplayedChild(
+                R.id.lyrics_widget_current_flipper,
+                0
+            )
+            manager.updateAppWidget(widgetIds, views)
+
+            val handler = Handler(Looper.getMainLooper())
+            for (frame in 1 until ids.size) {
+                handler.postDelayed({
+                    if (kineticGeneration.get() == generation) {
+                        val frameViews = RemoteViews(
                             context.packageName,
                             R.layout.lyrics_widget_layout_kinetic
                         )
-                        stopViews.setFlipping(
+                        frameViews.setDisplayedChild(
                             R.id.lyrics_widget_current_flipper,
-                            false,
-                            -1
+                            frame
                         )
-                        stopViews.setDisplayedChild(
-                            R.id.lyrics_widget_current_flipper,
-                            7
-                        )
-                        manager.partiallyUpdateAppWidget(widgetIds, stopViews)
+                        manager.partiallyUpdateAppWidget(widgetIds, frameViews)
                     }
-                }
-            }, 560L)
+                }, frame * 70L)
+            }
         }
 
         private fun openAppPendingIntent(context: Context): PendingIntent {
