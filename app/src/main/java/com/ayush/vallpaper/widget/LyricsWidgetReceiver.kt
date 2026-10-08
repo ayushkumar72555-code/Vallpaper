@@ -149,6 +149,16 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                 settings.lyricColorHex,
                 android.graphics.Color.WHITE
             )
+
+            val backgroundColor = when (settings.backgroundMode) {
+                LyricsWidgetSettings.BACKGROUND_BLUR ->
+                    parseColor(settings.blurColorHex, 0xB3000000.toInt())
+                LyricsWidgetSettings.BACKGROUND_OPAQUE ->
+                    parseColor(settings.opaqueColorHex, android.graphics.Color.BLACK)
+                else ->
+                    android.graphics.Color.TRANSPARENT
+            }
+            views.setInt(R.id.lyrics_widget_root, "setBackgroundColor", backgroundColor)
             val visibility = if (settings.showSongName) {
                 android.view.View.VISIBLE
             } else {
