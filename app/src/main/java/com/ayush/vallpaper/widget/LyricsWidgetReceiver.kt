@@ -207,11 +207,8 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                     state.currentLine.ifBlank { "Lyrics unavailable" }
                 )
 
-                if (settings.transition == LyricsWidgetSettings.TRANSITION_SLIDE) {
-                    applySlideWidgetSettings(views, settings)
-                } else {
-                    applyAnimatedWidgetSettings(views, settings)
-                }
+                applyAnimatedWidgetSettings(views, settings)
+                applyTransitionAnimation(views, settings)
 
                 views.setDisplayedChild(
                     R.id.lyrics_widget_current_flipper,
@@ -239,6 +236,8 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                     R.layout.lyrics_widget_layout_fade
                 LyricsWidgetSettings.TRANSITION_SLIDE ->
                     R.layout.lyrics_widget_layout_slide
+                LyricsWidgetSettings.TRANSITION_KINETIC ->
+                    R.layout.lyrics_widget_layout_fade
                 else ->
                     R.layout.lyrics_widget_layout
             }
@@ -303,6 +302,50 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
             )
         }
 
+        private fun applyTransitionAnimation(
+            views: RemoteViews,
+            settings: LyricsWidgetSettings
+        ) {
+            when (settings.transition) {
+                LyricsWidgetSettings.TRANSITION_KINETIC -> {
+                    views.setInt(
+                        R.id.lyrics_widget_current_flipper,
+                        "setInAnimation",
+                        R.anim.widget_lyrics_kinetic_in
+                    )
+                    views.setInt(
+                        R.id.lyrics_widget_current_flipper,
+                        "setOutAnimation",
+                        R.anim.widget_lyrics_kinetic_out
+                    )
+                }
+                LyricsWidgetSettings.TRANSITION_FADE -> {
+                    views.setInt(
+                        R.id.lyrics_widget_current_flipper,
+                        "setInAnimation",
+                        R.anim.widget_lyrics_fade_in
+                    )
+                    views.setInt(
+                        R.id.lyrics_widget_current_flipper,
+                        "setOutAnimation",
+                        R.anim.widget_lyrics_fade_out
+                    )
+                }
+                LyricsWidgetSettings.TRANSITION_SLIDE -> {
+                    views.setInt(
+                        R.id.lyrics_widget_current_flipper,
+                        "setInAnimation",
+                        R.anim.widget_lyrics_slide_in
+                    )
+                    views.setInt(
+                        R.id.lyrics_widget_current_flipper,
+                        "setOutAnimation",
+                        R.anim.widget_lyrics_slide_out
+                    )
+                }
+            }
+        }
+
         private fun applyAnimatedWidgetSettings(
             views: RemoteViews,
             settings: LyricsWidgetSettings
@@ -336,39 +379,6 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
 
         }
 
-        private fun applySlideWidgetSettings(
-            views: RemoteViews,
-            settings: LyricsWidgetSettings
-        ) {
-            val currentIds = arrayOf(
-                intArrayOf(
-                    R.id.lyrics_widget_current_a_sans,
-                    R.id.lyrics_widget_current_a_serif,
-                    R.id.lyrics_widget_current_a_mono
-                ),
-                intArrayOf(
-                    R.id.lyrics_widget_current_b_sans,
-                    R.id.lyrics_widget_current_b_serif,
-                    R.id.lyrics_widget_current_b_mono
-                )
-            )
-
-            currentIds.forEach { buffer ->
-                buffer.forEach {
-                    views.setViewVisibility(it, android.view.View.GONE)
-                    views.setTextViewTextSize(
-                        it,
-                        android.util.TypedValue.COMPLEX_UNIT_SP,
-                        settings.fontSizeSp
-                    )
-                }
-                views.setViewVisibility(
-                    buffer[fontIndex(settings)],
-                    android.view.View.VISIBLE
-                )
-            }
-
-        }
 
         private fun fontIndex(settings: LyricsWidgetSettings): Int =
             when (settings.fontFamily) {
