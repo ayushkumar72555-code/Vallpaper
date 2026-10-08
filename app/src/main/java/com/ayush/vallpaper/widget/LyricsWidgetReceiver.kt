@@ -15,8 +15,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicInteger
-import android.os.Handler
-import android.os.Looper
 
 class LyricsWidgetReceiver : AppWidgetProvider() {
 
@@ -38,14 +36,7 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
             )
         }
 
-        if (settings.transition == LyricsWidgetSettings.TRANSITION_KINETIC) {
-            applyKineticFrames(
-                context,
-                initial,
-                "PLAY MUSIC TO SHOW LYRICS",
-                settings
-            )
-        } else if (isAnimated(settings)) {
+        if (isAnimated(settings)) {
             setAnimatedBufferText(
                 initial,
                 0,
@@ -85,7 +76,6 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
     companion object {
 
         private val activeBuffer = AtomicInteger(0)
-        private val kineticGeneration = AtomicInteger(0)
 
         fun updateFull(context: Context, state: LyricsWidgetState) {
             val manager = AppWidgetManager.getInstance(context)
@@ -103,14 +93,7 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                 )
             }
 
-            if (settings.transition == LyricsWidgetSettings.TRANSITION_KINETIC) {
-                applyKineticFrames(
-                    context,
-                    views,
-                    state.currentLine.ifBlank { "Lyrics unavailable" },
-                    settings
-                )
-            } else if (isAnimated(settings)) {
+            if (isAnimated(settings)) {
                 val line = state.currentLine.ifBlank { "Lyrics unavailable" }
                 setAnimatedBufferText(views, 0, line)
                 setAnimatedBufferText(views, 1, line)
@@ -137,9 +120,7 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                     android.graphics.Color.TRANSPARENT
             }
             applyWidgetBackground(views, backgroundColor)
-            val currentIds = if (settings.transition == LyricsWidgetSettings.TRANSITION_KINETIC) {
-                intArrayOf()
-            } else if (settings.transition == LyricsWidgetSettings.TRANSITION_NONE) {
+            val currentIds = if (settings.transition == LyricsWidgetSettings.TRANSITION_NONE) {
                 intArrayOf(
                     R.id.lyrics_widget_current_sans,
                     R.id.lyrics_widget_current_serif,
@@ -214,14 +195,7 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
 
             applyCommonAppearance(views, settings)
 
-            if (settings.transition == LyricsWidgetSettings.TRANSITION_KINETIC) {
-                applyKineticFrames(
-                    context,
-                    views,
-                    state.currentLine.ifBlank { "Lyrics unavailable" },
-                    settings
-                )
-            } else if (isAnimated(settings)) {
+            if (isAnimated(settings)) {
                 val targetBuffer = 1 - activeBuffer.get()
                 setAnimatedBufferText(
                     views,
@@ -257,8 +231,6 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                     R.layout.lyrics_widget_layout_fade
                 LyricsWidgetSettings.TRANSITION_SLIDE ->
                     R.layout.lyrics_widget_layout_slide
-                LyricsWidgetSettings.TRANSITION_KINETIC ->
-                    R.layout.lyrics_widget_layout_kinetic
                 else ->
                     R.layout.lyrics_widget_layout
             }
@@ -383,14 +355,7 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                     )
                 }
 
-                if (settings.transition == LyricsWidgetSettings.TRANSITION_KINETIC) {
-                    applyKineticFrames(
-                        context,
-                        views,
-                        state.currentLine.ifBlank { "Lyrics unavailable" },
-                        settings
-                    )
-                } else if (isAnimated(settings)) {
+                if (isAnimated(settings)) {
                     val line = state.currentLine.ifBlank { "Lyrics unavailable" }
                     setAnimatedBufferText(views, 0, line)
                     setAnimatedBufferText(views, 1, line)
@@ -409,60 +374,6 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                 }
 
                 manager.updateAppWidget(ids, views)
-            }
-        }
-
-        private fun applyKineticFrames(
-            context: Context,
-            views: RemoteViews,
-            text: String,
-            settings: LyricsWidgetSettings
-        ) {
-            val frames = KineticTypographyRenderer.renderFrames(context, text, settings)
-            val ids = intArrayOf(
-                R.id.lyrics_widget_kinetic_frame_0,
-                R.id.lyrics_widget_kinetic_frame_1,
-                R.id.lyrics_widget_kinetic_frame_2,
-                R.id.lyrics_widget_kinetic_frame_3,
-                R.id.lyrics_widget_kinetic_frame_4,
-                R.id.lyrics_widget_kinetic_frame_5,
-                R.id.lyrics_widget_kinetic_frame_6,
-                R.id.lyrics_widget_kinetic_frame_7
-            )
-
-            frames.forEachIndexed { index, bitmap ->
-                views.setImageViewBitmap(ids[index], bitmap)
-            }
-
-            val manager = AppWidgetManager.getInstance(context)
-            val widgetIds = manager.getAppWidgetIds(
-                ComponentName(context, LyricsWidgetReceiver::class.java)
-            )
-            if (widgetIds.isEmpty()) return
-
-            val generation = kineticGeneration.incrementAndGet()
-
-            views.setDisplayedChild(
-                R.id.lyrics_widget_current_flipper,
-                0
-            )
-            manager.updateAppWidget(widgetIds, views)
-
-            val handler = Handler(Looper.getMainLooper())
-            for (frame in 1 until ids.size) {
-                handler.postDelayed({
-                    if (kineticGeneration.get() == generation) {
-                        val frameViews = RemoteViews(
-                            context.packageName,
-                            R.layout.lyrics_widget_layout_kinetic
-                        )
-                        frameViews.setDisplayedChild(
-                            R.id.lyrics_widget_current_flipper,
-                            frame
-                        )
-                        manager.partiallyUpdateAppWidget(widgetIds, frameViews)
-                    }
-                }, frame * 70L)
             }
         }
 
