@@ -16,108 +16,50 @@
         <ViewFlipper
             android:id="@+id/lyrics_widget_current_flipper"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="300dp"
             android:layout_gravity="center"
-            android:animateFirstView="false"
-            android:inAnimation="@anim/widget_lyrics_kinetic_in"
-            android:outAnimation="@anim/widget_lyrics_kinetic_out">
+            android:animateFirstView="false">
 
-            <FrameLayout
+            <ImageView
+                android:id="@+id/lyrics_widget_kinetic_frame_0"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-
-                <TextView
-                    android:id="@+id/lyrics_widget_current_a_sans"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center"
-                    android:textColor="#FFFFFF"
-                    android:textSize="19sp"
-                    android:textStyle="bold"
-                    android:shadowColor="#BFFFFFFF"
-                    android:shadowDx="0"
-                    android:shadowDy="0"
-                    android:shadowRadius="8" />
-
-                <TextView
-                    android:id="@+id/lyrics_widget_current_a_serif"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center"
-                    android:textColor="#FFFFFF"
-                    android:textSize="19sp"
-                    android:textStyle="bold"
-                    android:fontFamily="serif"
-                    android:shadowColor="#BFFFFFFF"
-                    android:shadowDx="0"
-                    android:shadowDy="0"
-                    android:shadowRadius="8"
-                    android:visibility="gone" />
-
-                <TextView
-                    android:id="@+id/lyrics_widget_current_a_mono"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center"
-                    android:textColor="#FFFFFF"
-                    android:textSize="19sp"
-                    android:textStyle="bold"
-                    android:fontFamily="monospace"
-                    android:shadowColor="#BFFFFFFF"
-                    android:shadowDx="0"
-                    android:shadowDy="0"
-                    android:shadowRadius="8"
-                    android:visibility="gone" />
-            </FrameLayout>
-
-            <FrameLayout
+                android:layout_height="match_parent"
+                android:scaleType="centerInside" />
+            <ImageView
+                android:id="@+id/lyrics_widget_kinetic_frame_1"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-
-                <TextView
-                    android:id="@+id/lyrics_widget_current_b_sans"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center"
-                    android:textColor="#FFFFFF"
-                    android:textSize="19sp"
-                    android:textStyle="bold"
-                    android:shadowColor="#BFFFFFFF"
-                    android:shadowDx="0"
-                    android:shadowDy="0"
-                    android:shadowRadius="8" />
-
-                <TextView
-                    android:id="@+id/lyrics_widget_current_b_serif"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center"
-                    android:textColor="#FFFFFF"
-                    android:textSize="19sp"
-                    android:textStyle="bold"
-                    android:fontFamily="serif"
-                    android:shadowColor="#BFFFFFFF"
-                    android:shadowDx="0"
-                    android:shadowDy="0"
-                    android:shadowRadius="8"
-                    android:visibility="gone" />
-
-                <TextView
-                    android:id="@+id/lyrics_widget_current_b_mono"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center"
-                    android:textColor="#FFFFFF"
-                    android:textSize="19sp"
-                    android:textStyle="bold"
-                    android:fontFamily="monospace"
-                    android:shadowColor="#BFFFFFFF"
-                    android:shadowDx="0"
-                    android:shadowDy="0"
-                    android:shadowRadius="8"
-                    android:visibility="gone" />
-            </FrameLayout>
+                android:layout_height="match_parent"
+                android:scaleType="centerInside" />
+            <ImageView
+                android:id="@+id/lyrics_widget_kinetic_frame_2"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerInside" />
+            <ImageView
+                android:id="@+id/lyrics_widget_kinetic_frame_3"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerInside" />
+            <ImageView
+                android:id="@+id/lyrics_widget_kinetic_frame_4"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerInside" />
+            <ImageView
+                android:id="@+id/lyrics_widget_kinetic_frame_5"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerInside" />
+            <ImageView
+                android:id="@+id/lyrics_widget_kinetic_frame_6"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerInside" />
+            <ImageView
+                android:id="@+id/lyrics_widget_kinetic_frame_7"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerInside" />
         </ViewFlipper>
-
     </FrameLayout>
 </LinearLayout>
