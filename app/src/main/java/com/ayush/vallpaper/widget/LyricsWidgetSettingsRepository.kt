@@ -8,7 +8,7 @@ data class LyricsWidgetSettings(
     val transition: String = TRANSITION_FADE,
     val showSongName: Boolean = true,
     val lyricColorHex: String = "#FFFFFFFF",
-    val backgroundMode: String = BACKGROUND_TRANSPARENT,
+    val backgroundMode: String = LyricsWidgetSettings.BACKGROUND_TRANSPARENT,
     val blurColorHex: String = "#B3000000",
     val opaqueColorHex: String = "#FF000000"
 ) {
@@ -51,7 +51,7 @@ class LyricsWidgetSettingsRepository(context: Context) {
                 "lyric_color",
                 preferences.getString("current_color", "#FFFFFFFF")
             ) ?: "#FFFFFFFF",
-            backgroundMode = preferences.getString("background_mode", BACKGROUND_TRANSPARENT) ?: BACKGROUND_TRANSPARENT,
+            backgroundMode = preferences.getString("background_mode", LyricsWidgetSettings.BACKGROUND_TRANSPARENT) ?: LyricsWidgetSettings.BACKGROUND_TRANSPARENT,
             blurColorHex = preferences.getString("blur_color", "#B3000000") ?: "#B3000000",
             opaqueColorHex = preferences.getString("opaque_color", "#FF000000") ?: "#FF000000"
         )
