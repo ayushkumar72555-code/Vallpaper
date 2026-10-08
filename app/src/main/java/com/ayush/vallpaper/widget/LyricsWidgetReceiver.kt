@@ -158,7 +158,7 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                 else ->
                     android.graphics.Color.TRANSPARENT
             }
-            views.setInt(R.id.lyrics_widget_root, "setBackgroundColor", backgroundColor)
+            applyWidgetBackground(views, backgroundColor)
             val visibility = if (settings.showSongName) {
                 android.view.View.VISIBLE
             } else {
@@ -199,6 +199,25 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
             }
 
             currentIds.forEach { views.setTextColor(it, lyricColor) }
+        }
+
+        private fun applyWidgetBackground(
+            views: RemoteViews,
+            color: Int
+        ) {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                views.setColorStateList(
+                    R.id.lyrics_widget_root,
+                    "setBackgroundTintList",
+                    android.content.res.ColorStateList.valueOf(color)
+                )
+            } else {
+                views.setInt(
+                    R.id.lyrics_widget_root,
+                    "setBackgroundColor",
+                    color
+                )
+            }
         }
 
         private fun parseColor(hex: String, fallback: Int): Int =
