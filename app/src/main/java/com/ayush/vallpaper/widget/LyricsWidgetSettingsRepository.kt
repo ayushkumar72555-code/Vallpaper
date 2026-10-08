@@ -19,6 +19,7 @@ data class LyricsWidgetSettings(
         const val TRANSITION_NONE = "none"
         const val TRANSITION_FADE = "fade"
         const val TRANSITION_SLIDE = "slide"
+        const val TRANSITION_KINETIC = "kinetic"
 
         const val BACKGROUND_TRANSPARENT = "transparent"
         const val BACKGROUND_BLUR = "blur"
