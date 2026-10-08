@@ -234,7 +234,7 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                 LyricsWidgetSettings.TRANSITION_SLIDE ->
                     R.layout.lyrics_widget_layout_slide
                 LyricsWidgetSettings.TRANSITION_KINETIC ->
-                    R.layout.lyrics_widget_layout_fade
+                    R.layout.lyrics_widget_layout_kinetic
                 else ->
                     R.layout.lyrics_widget_layout
             }
@@ -299,49 +299,6 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
             )
         }
 
-        private fun applyTransitionAnimation(
-            views: RemoteViews,
-            settings: LyricsWidgetSettings
-        ) {
-            when (settings.transition) {
-                LyricsWidgetSettings.TRANSITION_KINETIC -> {
-                    views.setInt(
-                        R.id.lyrics_widget_current_flipper,
-                        "setInAnimation",
-                        R.anim.widget_lyrics_kinetic_in
-                    )
-                    views.setInt(
-                        R.id.lyrics_widget_current_flipper,
-                        "setOutAnimation",
-                        R.anim.widget_lyrics_kinetic_out
-                    )
-                }
-                LyricsWidgetSettings.TRANSITION_FADE -> {
-                    views.setInt(
-                        R.id.lyrics_widget_current_flipper,
-                        "setInAnimation",
-                        R.anim.widget_lyrics_fade_in
-                    )
-                    views.setInt(
-                        R.id.lyrics_widget_current_flipper,
-                        "setOutAnimation",
-                        R.anim.widget_lyrics_fade_out
-                    )
-                }
-                LyricsWidgetSettings.TRANSITION_SLIDE -> {
-                    views.setInt(
-                        R.id.lyrics_widget_current_flipper,
-                        "setInAnimation",
-                        R.anim.widget_lyrics_slide_in
-                    )
-                    views.setInt(
-                        R.id.lyrics_widget_current_flipper,
-                        "setOutAnimation",
-                        R.anim.widget_lyrics_slide_out
-                    )
-                }
-            }
-        }
 
         private fun applyAnimatedWidgetSettings(
             views: RemoteViews,
