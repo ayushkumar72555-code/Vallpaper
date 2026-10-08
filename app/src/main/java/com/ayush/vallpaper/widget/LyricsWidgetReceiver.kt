@@ -159,16 +159,10 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                     android.graphics.Color.TRANSPARENT
             }
             applyWidgetBackground(views, backgroundColor)
-            val visibility = if (settings.showSongName) {
-                android.view.View.VISIBLE
-            } else {
-                android.view.View.GONE
-            }
-
-            views.setViewVisibility(R.id.lyrics_widget_song_info, visibility)
-            views.setViewVisibility(R.id.lyrics_widget_title_divider, visibility)
-            views.setViewVisibility(R.id.lyrics_widget_progress, visibility)
-            views.setViewVisibility(R.id.lyrics_widget_controls, visibility)
+            views.setViewVisibility(R.id.lyrics_widget_song_info, android.view.View.VISIBLE)
+            views.setViewVisibility(R.id.lyrics_widget_title_divider, android.view.View.VISIBLE)
+            views.setViewVisibility(R.id.lyrics_widget_progress, android.view.View.VISIBLE)
+            views.setViewVisibility(R.id.lyrics_widget_controls, android.view.View.VISIBLE)
 
             views.setTextColor(R.id.lyrics_widget_title, lyricColor)
             views.setTextColor(R.id.lyrics_widget_artist, lyricColor)
@@ -353,8 +347,6 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
             if (ids.isEmpty()) return
 
             val settings = LyricsWidgetSettingsRepository(context).read()
-            if (!settings.showSongName) return
-
             val views = RemoteViews(context.packageName, when (settings.transition) {
                 LyricsWidgetSettings.TRANSITION_FADE -> R.layout.lyrics_widget_layout_fade
                 LyricsWidgetSettings.TRANSITION_SLIDE -> R.layout.lyrics_widget_layout_slide
