@@ -154,9 +154,7 @@
                         android:shadowColor="#BFFFFFFF"
                         android:shadowDx="0"
                         android:shadowDy="0"
-                        android:shadowRadius="8"
-                        android:maxLines="2"
-                        android:ellipsize="end" />
+                        android:shadowRadius="8" />
 
                     <TextView
                         android:id="@+id/lyrics_widget_current_a_serif"
@@ -173,8 +171,6 @@
                         android:shadowDx="0"
                         android:shadowDy="0"
                         android:shadowRadius="8"
-                        android:maxLines="2"
-                        android:ellipsize="end"
                         android:visibility="gone" />
 
                     <TextView
@@ -192,8 +188,6 @@
                         android:shadowDx="0"
                         android:shadowDy="0"
                         android:shadowRadius="8"
-                        android:maxLines="2"
-                        android:ellipsize="end"
                         android:visibility="gone" />
                 </FrameLayout>
 
@@ -214,9 +208,7 @@
                         android:shadowColor="#BFFFFFFF"
                         android:shadowDx="0"
                         android:shadowDy="0"
-                        android:shadowRadius="8"
-                        android:maxLines="2"
-                        android:ellipsize="end" />
+                        android:shadowRadius="8" />
 
                     <TextView
                         android:id="@+id/lyrics_widget_current_b_serif"
@@ -233,8 +225,6 @@
                         android:shadowDx="0"
                         android:shadowDy="0"
                         android:shadowRadius="8"
-                        android:maxLines="2"
-                        android:ellipsize="end"
                         android:visibility="gone" />
 
                     <TextView
@@ -252,8 +242,6 @@
                         android:shadowDx="0"
                         android:shadowDy="0"
                         android:shadowRadius="8"
-                        android:maxLines="2"
-                        android:ellipsize="end"
                         android:visibility="gone" />
                 </FrameLayout>
             </ViewFlipper>
