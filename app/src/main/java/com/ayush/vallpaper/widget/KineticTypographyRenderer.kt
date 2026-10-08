@@ -57,7 +57,7 @@ object KineticTypographyRenderer {
         var currentWidth = 0f
         val space = paint.measureText(" ")
 
-        text.trim().split(Regex("\s+")).forEach { word ->
+        text.trim().split(Regex("""\s+""")).forEach { word ->
             val width = paint.measureText(word)
             if (current.isNotEmpty() && currentWidth + space + width > maxWidth) {
                 lines += current
