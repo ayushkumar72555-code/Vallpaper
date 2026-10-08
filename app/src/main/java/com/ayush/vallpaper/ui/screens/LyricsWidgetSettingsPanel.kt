@@ -159,21 +159,43 @@ private fun SettingChoices(
 }
 
 @Composable
-private fun ColorChoices(selected: String, accent: Color, includeAlpha: Boolean = false, onSelected: (String) -> Unit) {
-    val colors = listOf(
-        "#FFFFFFFF" to Color.White,
-        "#FF000000" to Color.Black,
-        "#FFFF5252" to Color(0xFFFF5252),
-        "#FFFF9800" to Color(0xFFFF9800),
-        "#FFFFEB3B" to Color(0xFFFFEB3B),
-        "#FF69F0AE" to Color(0xFF69F0AE),
-        "#FF40C4FF" to Color(0xFF40C4FF),
-        "#FF7C4DFF" to Color(0xFF7C4DFF),
-        "#FFFF4081" to Color(0xFFFF4081)
-    )
-    val displayedColors = if (includeAlpha) colors else colors.map { (hex, color) -> hex.replaceFirst("^#AA|^#B3".toRegex(), "#FF") to color }
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-        displayedColors.forEach { (hex, color) ->
+private fun ColorChoices(
+    selected: String,
+    accent: Color,
+    includeAlpha: Boolean = false,
+    onSelected: (String) -> Unit
+) {
+    val colors = if (includeAlpha) {
+        listOf(
+            "#66000000" to Color(0x66000000),
+            "#99000000" to Color(0x99000000),
+            "#B3000000" to Color(0xB3000000),
+            "#CC000000" to Color(0xCC000000),
+            "#66FFFFFF" to Color(0x66FFFFFF),
+            "#99FFFFFF" to Color(0x99FFFFFF),
+            "#B3FFFFFF" to Color(0xB3FFFFFF),
+            "#B3FF5252" to Color(0xB3FF5252),
+            "#B3FF9800" to Color(0xB3FF9800)
+        )
+    } else {
+        listOf(
+            "#FFFFFFFF" to Color.White,
+            "#FF000000" to Color.Black,
+            "#FFFF5252" to Color(0xFFFF5252),
+            "#FFFF9800" to Color(0xFFFF9800),
+            "#FFFFEB3B" to Color(0xFFFFEB3B),
+            "#FF69F0AE" to Color(0xFF69F0AE),
+            "#FF40C4FF" to Color(0xFF40C4FF),
+            "#FF7C4DFF" to Color(0xFF7C4DFF),
+            "#FFFF4081" to Color(0xFFFF4081)
+        )
+    }
+
+    Row(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(7.dp)
+    ) {
+        colors.forEach { (hex, color) ->
             val selectedNow = hex.equals(selected, true)
             Card(
                 modifier = Modifier.size(32.dp).clickable { onSelected(hex) },
