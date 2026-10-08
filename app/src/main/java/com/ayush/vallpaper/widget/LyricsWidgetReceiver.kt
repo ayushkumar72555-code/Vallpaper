@@ -139,6 +139,8 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                 setAnimatedBufferText(views, 0, line)
                 setAnimatedBufferText(views, 1, line)
             }
+
+            manager.updateAppWidget(ids, views)
         }
 
         private fun applyCommonAppearance(
