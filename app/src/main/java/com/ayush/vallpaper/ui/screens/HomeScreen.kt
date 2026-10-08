@@ -286,7 +286,6 @@ fun HomeScreen() {
                 widgetSettingsRepository.setFontSize(updated.fontSizeSp)
                 widgetSettingsRepository.setFontFamily(updated.fontFamily)
                 widgetSettingsRepository.setTransition(updated.transition)
-                widgetSettingsRepository.setShowSongName(updated.showSongName)
                 widgetSettingsRepository.setLyricColor(updated.lyricColorHex)
                 widgetSettingsRepository.setBackgroundMode(updated.backgroundMode)
                 widgetSettingsRepository.setBlurColor(updated.blurColorHex)
