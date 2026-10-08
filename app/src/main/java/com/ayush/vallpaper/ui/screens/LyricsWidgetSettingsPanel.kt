@@ -15,7 +15,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -33,18 +32,6 @@ fun LyricsWidgetSettingsPanel(
     Text("LYRICS WIDGET", style = MaterialTheme.typography.labelLarge, color = accent)
     Spacer(Modifier.height(14.dp))
 
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Column(Modifier.weight(1f)) {
-            Text("SHOW SONG NAME", style = MaterialTheme.typography.titleSmall)
-            Text("Keep the song title above the lyrics.", style = MaterialTheme.typography.bodySmall)
-        }
-        Switch(
-            checked = settings.showSongName,
-            onCheckedChange = { onChanged(settings.copy(showSongName = it)) }
-        )
-    }
-
-    Spacer(Modifier.height(16.dp))
     Text("FONT SIZE", style = MaterialTheme.typography.labelLarge, color = accent)
     Spacer(Modifier.height(8.dp))
     SettingChoices(listOf("16sp", "19sp", "22sp", "26sp"), settings.fontSizeSp.toInt().toString() + "sp", accent) {
