@@ -103,7 +103,14 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                 )
             }
 
-            if (isAnimated(settings)) {
+            if (settings.transition == LyricsWidgetSettings.TRANSITION_KINETIC) {
+                applyKineticFrames(
+                    context,
+                    views,
+                    state.currentLine.ifBlank { "Lyrics unavailable" },
+                    settings
+                )
+            } else if (isAnimated(settings)) {
                 val line = state.currentLine.ifBlank { "Lyrics unavailable" }
                 setAnimatedBufferText(views, 0, line)
                 setAnimatedBufferText(views, 1, line)
@@ -207,7 +214,14 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
 
             applyCommonAppearance(views, settings)
 
-            if (isAnimated(settings)) {
+            if (settings.transition == LyricsWidgetSettings.TRANSITION_KINETIC) {
+                applyKineticFrames(
+                    context,
+                    views,
+                    state.currentLine.ifBlank { "Lyrics unavailable" },
+                    settings
+                )
+            } else if (isAnimated(settings)) {
                 val targetBuffer = 1 - activeBuffer.get()
                 setAnimatedBufferText(
                     views,
@@ -369,7 +383,14 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                     )
                 }
 
-                if (isAnimated(settings)) {
+                if (settings.transition == LyricsWidgetSettings.TRANSITION_KINETIC) {
+                    applyKineticFrames(
+                        context,
+                        views,
+                        state.currentLine.ifBlank { "Lyrics unavailable" },
+                        settings
+                    )
+                } else if (isAnimated(settings)) {
                     val line = state.currentLine.ifBlank { "Lyrics unavailable" }
                     setAnimatedBufferText(views, 0, line)
                     setAnimatedBufferText(views, 1, line)
