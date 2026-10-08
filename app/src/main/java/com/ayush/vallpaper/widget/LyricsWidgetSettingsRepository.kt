@@ -6,7 +6,6 @@ data class LyricsWidgetSettings(
     val fontSizeSp: Float = 19f,
     val fontFamily: String = FONT_SANS,
     val transition: String = TRANSITION_FADE,
-    val showSongName: Boolean = true,
     val lyricColorHex: String = "#FFFFFFFF",
     val backgroundMode: String = LyricsWidgetSettings.BACKGROUND_TRANSPARENT,
     val blurColorHex: String = "#B3000000",
@@ -46,7 +45,6 @@ class LyricsWidgetSettingsRepository(context: Context) {
                 "transition",
                 LyricsWidgetSettings.TRANSITION_FADE
             ) ?: LyricsWidgetSettings.TRANSITION_FADE,
-            showSongName = preferences.getBoolean("show_song_name", true),
             lyricColorHex = preferences.getString(
                 "lyric_color",
                 preferences.getString("current_color", "#FFFFFFFF")
@@ -66,10 +64,6 @@ class LyricsWidgetSettingsRepository(context: Context) {
 
     fun setTransition(transition: String) {
         preferences.edit().putString("transition", transition).apply()
-    }
-
-    fun setShowSongName(show: Boolean) {
-        preferences.edit().putBoolean("show_song_name", show).apply()
     }
 
     fun setLyricColor(hex: String) {
