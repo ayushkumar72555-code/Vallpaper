@@ -133,13 +133,6 @@ class LyricsSyncEngine(
                 }
             }
 
-            LyricsWidgetReceiver.updatePlayback(
-                context,
-                positionMs = position ?: 0L,
-                durationMs = track.durationMs,
-                playbackState = playbackState ?: PlaybackState.STATE_NONE
-            )
-
             if (now - lastLogAt >= 1_000L) {
                 Log.d(
                     TAG,
