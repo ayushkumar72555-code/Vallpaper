@@ -15,6 +15,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicInteger
+import android.os.Handler
+import android.os.Looper
 
 class LyricsWidgetReceiver : AppWidgetProvider() {
 
@@ -83,6 +85,7 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
     companion object {
 
         private val activeBuffer = AtomicInteger(0)
+        private val kineticGeneration = AtomicInteger(0)
 
         fun updateFull(context: Context, state: LyricsWidgetState) {
             val manager = AppWidgetManager.getInstance(context)
