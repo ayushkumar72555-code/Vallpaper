@@ -36,7 +36,14 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
             )
         }
 
-        if (isAnimated(settings)) {
+        if (settings.transition == LyricsWidgetSettings.TRANSITION_KINETIC) {
+            applyKineticFrames(
+                context,
+                initial,
+                "PLAY MUSIC TO SHOW LYRICS",
+                settings
+            )
+        } else if (isAnimated(settings)) {
             setAnimatedBufferText(
                 initial,
                 0,
@@ -120,7 +127,9 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                     android.graphics.Color.TRANSPARENT
             }
             applyWidgetBackground(views, backgroundColor)
-            val currentIds = if (settings.transition == LyricsWidgetSettings.TRANSITION_NONE) {
+            val currentIds = if (settings.transition == LyricsWidgetSettings.TRANSITION_KINETIC) {
+                intArrayOf()
+            } else if (settings.transition == LyricsWidgetSettings.TRANSITION_NONE) {
                 intArrayOf(
                     R.id.lyrics_widget_current_sans,
                     R.id.lyrics_widget_current_serif,
@@ -377,6 +386,58 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
 
                 manager.updateAppWidget(ids, views)
             }
+        }
+
+        private fun applyKineticFrames(
+            context: Context,
+            views: RemoteViews,
+            text: String,
+            settings: LyricsWidgetSettings
+        ) {
+            val frames = KineticTypographyRenderer.renderFrames(context, text, settings)
+            val ids = intArrayOf(
+                R.id.lyrics_widget_kinetic_frame_0,
+                R.id.lyrics_widget_kinetic_frame_1,
+                R.id.lyrics_widget_kinetic_frame_2,
+                R.id.lyrics_widget_kinetic_frame_3,
+                R.id.lyrics_widget_kinetic_frame_4,
+                R.id.lyrics_widget_kinetic_frame_5,
+                R.id.lyrics_widget_kinetic_frame_6,
+                R.id.lyrics_widget_kinetic_frame_7
+            )
+
+            frames.forEachIndexed { index, bitmap ->
+                views.setImageViewBitmap(ids[index], bitmap)
+            }
+
+            views.setDisplayedChild(R.id.lyrics_widget_current_flipper, 0)
+            views.setFlipping(R.id.lyrics_widget_current_flipper, true, 58)
+
+            val generation = kineticGeneration.incrementAndGet()
+            Handler(Looper.getMainLooper()).postDelayed({
+                if (kineticGeneration.get() == generation) {
+                    val manager = AppWidgetManager.getInstance(context)
+                    val widgetIds = manager.getAppWidgetIds(
+                        ComponentName(context, LyricsWidgetReceiver::class.java)
+                    )
+                    if (widgetIds.isNotEmpty()) {
+                        val stopViews = RemoteViews(
+                            context.packageName,
+                            R.layout.lyrics_widget_layout_kinetic
+                        )
+                        stopViews.setFlipping(
+                            R.id.lyrics_widget_current_flipper,
+                            false,
+                            -1
+                        )
+                        stopViews.setDisplayedChild(
+                            R.id.lyrics_widget_current_flipper,
+                            7
+                        )
+                        manager.partiallyUpdateAppWidget(widgetIds, stopViews)
+                    }
+                }
+            }, 560L)
         }
 
         private fun openAppPendingIntent(context: Context): PendingIntent {
