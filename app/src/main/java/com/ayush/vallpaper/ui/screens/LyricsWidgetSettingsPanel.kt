@@ -90,6 +90,43 @@ fun LyricsWidgetSettingsPanel(
     }
 
     Spacer(Modifier.height(16.dp))
+    Text("WIDGET BACKGROUND", style = MaterialTheme.typography.labelLarge, color = accent)
+    Spacer(Modifier.height(8.dp))
+    SettingChoices(
+        listOf("Transparent", "Blurred", "Opaque"),
+        when (settings.backgroundMode) {
+            LyricsWidgetSettings.BACKGROUND_BLUR -> "Blurred"
+            LyricsWidgetSettings.BACKGROUND_OPAQUE -> "Opaque"
+            else -> "Transparent"
+        },
+        accent
+    ) { value ->
+        onChanged(settings.copy(backgroundMode = when (value) {
+            "Blurred" -> LyricsWidgetSettings.BACKGROUND_BLUR
+            "Opaque" -> LyricsWidgetSettings.BACKGROUND_OPAQUE
+            else -> LyricsWidgetSettings.BACKGROUND_TRANSPARENT
+        }))
+    }
+
+    if (settings.backgroundMode == LyricsWidgetSettings.BACKGROUND_BLUR) {
+        Spacer(Modifier.height(12.dp))
+        Text("BLUR COLOR", style = MaterialTheme.typography.labelLarge, color = accent)
+        Spacer(Modifier.height(8.dp))
+        ColorChoices(settings.blurColorHex, accent, includeAlpha = true) {
+            onChanged(settings.copy(blurColorHex = it))
+        }
+    }
+
+    if (settings.backgroundMode == LyricsWidgetSettings.BACKGROUND_OPAQUE) {
+        Spacer(Modifier.height(12.dp))
+        Text("OPAQUE COLOR", style = MaterialTheme.typography.labelLarge, color = accent)
+        Spacer(Modifier.height(8.dp))
+        ColorChoices(settings.opaqueColorHex, accent) {
+            onChanged(settings.copy(opaqueColorHex = it))
+        }
+    }
+
+    Spacer(Modifier.height(16.dp))
     Text("LYRIC COLOR", style = MaterialTheme.typography.labelLarge, color = accent)
     Spacer(Modifier.height(8.dp))
     ColorChoices(settings.lyricColorHex, accent) {
@@ -122,7 +159,7 @@ private fun SettingChoices(
 }
 
 @Composable
-private fun ColorChoices(selected: String, accent: Color, onSelected: (String) -> Unit) {
+private fun ColorChoices(selected: String, accent: Color, includeAlpha: Boolean = false, onSelected: (String) -> Unit) {
     val colors = listOf(
         "#FFFFFFFF" to Color.White,
         "#FF000000" to Color.Black,
@@ -134,8 +171,9 @@ private fun ColorChoices(selected: String, accent: Color, onSelected: (String) -
         "#FF7C4DFF" to Color(0xFF7C4DFF),
         "#FFFF4081" to Color(0xFFFF4081)
     )
+    val displayedColors = if (includeAlpha) colors else colors.map { (hex, color) -> hex.replaceFirst("^#AA|^#B3".toRegex(), "#FF") to color }
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-        colors.forEach { (hex, color) ->
+        displayedColors.forEach { (hex, color) ->
             val selectedNow = hex.equals(selected, true)
             Card(
                 modifier = Modifier.size(32.dp).clickable { onSelected(hex) },
