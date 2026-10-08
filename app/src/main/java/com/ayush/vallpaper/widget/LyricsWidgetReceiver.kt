@@ -48,7 +48,6 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                 "PLAY MUSIC TO SHOW LYRICS"
             )
             applyAnimatedWidgetSettings(initial, settings)
-            applyTransitionAnimation(initial, settings)
             initial.setDisplayedChild(R.id.lyrics_widget_current_flipper, 0)
             activeBuffer.set(0)
         } else {
@@ -205,8 +204,7 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                 )
 
                 applyAnimatedWidgetSettings(views, settings)
-                applyTransitionAnimation(views, settings)
-
+    
                 views.setDisplayedChild(
                     R.id.lyrics_widget_current_flipper,
                     targetBuffer
@@ -364,8 +362,7 @@ class LyricsWidgetReceiver : AppWidgetProvider() {
                     setAnimatedBufferText(views, 0, line)
                     setAnimatedBufferText(views, 1, line)
                     applyAnimatedWidgetSettings(views, settings)
-                    applyTransitionAnimation(views, settings)
-                    views.setDisplayedChild(
+                            views.setDisplayedChild(
                         R.id.lyrics_widget_current_flipper,
                         0
                     )
